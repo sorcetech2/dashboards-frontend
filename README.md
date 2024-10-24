@@ -20,3 +20,11 @@ You should now be able to access the application at http://localhost:3000.
 ## deploy
 
 commit and push
+
+## Somewhere else
+
+when setting this up somewhere else, note that these env variables are required
+AUTH_SECRET=... [any randoms tring]
+
+AWS_SECRET_ACCESS_KEY=...
+AWS_ACCESS_KEY_ID=..
