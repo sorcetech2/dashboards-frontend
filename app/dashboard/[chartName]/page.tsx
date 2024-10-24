@@ -152,7 +152,7 @@ export default async function DashboardPage({
                     <svg width="24" height="24" className="inline-block mr-2">
                       <circle cx="10" cy="10" r="8" fill={color} />
                     </svg>
-                    {rmp}
+                    {rmp.charAt(0).toUpperCase() + rmp.slice(1).toLowerCase()}
                   </div>
                 </TopCard>
               </div>
