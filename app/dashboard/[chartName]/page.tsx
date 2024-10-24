@@ -120,7 +120,7 @@ export default async function DashboardPage({
         <div className="border-b">
           <div className="flex h-16 items-center px-4">
             <Image
-              src="/logo.png"
+              src="/logo2.png"
               alt="SORCE"
               width={120}
               height={40}

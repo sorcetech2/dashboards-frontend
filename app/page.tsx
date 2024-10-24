@@ -16,7 +16,7 @@ export default function LogoutPage() {
         <CardHeader>
           <CardTitle className="text-2xl text-center">
             <Image
-              src="/logo.png"
+              src="/logo2.png"
               alt="SORCE"
               width={220}
               height={80}
