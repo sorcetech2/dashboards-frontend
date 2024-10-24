@@ -3,9 +3,8 @@ import './globals.css';
 import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
-  title: 'Next.js App Router + NextAuth + Tailwind CSS',
-  description:
-    'A user admin dashboard configured with Next.js, Postgres, NextAuth, Tailwind CSS, TypeScript, and Prettier.'
+  title: 'SORCE Dashboards',
+  description: 'Updated version of the sorce dashboards'
 };
 
 export default function RootLayout({
@@ -16,10 +15,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script> */}
-        {/* <script>dayjs().format()</script> */}
-        {/* <script src="/chart-script.js"></script> */}
-        {/* <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.0"></script> */}
       </head>
       <body
         style={{ backgroundColor: 'rgba(4,16,33,1)' }}

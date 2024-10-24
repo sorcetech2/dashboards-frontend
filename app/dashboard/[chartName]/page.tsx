@@ -126,7 +126,7 @@ export default async function DashboardPage({
               height={40}
               className="inline-block mr-2"
             />
-            {admin && <MainNav className="mx-6" />}
+            {/* {admin && <MainNav className="mx-6" />} */}
             <div className="ml-auto flex items-center space-x-4 pr-4">
               <TeamSwitcher teams={allCharts} />
             </div>
