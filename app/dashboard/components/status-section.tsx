@@ -60,7 +60,7 @@ export default function StatusSection({ chartData }: StatusSectionProps) {
                     <div className="text-2m font-bold text-center">
                       {chartData.today[0]?.[`${key}_trend` as keyof TodayData]
                         ?.toString()
-                        .toUpperCase()}
+                        .toUpperCase()}{' '}
                       {chartData.today[0]?.[`${key}_mean` as keyof TodayData]}
                     </div>
                     <SparklineChart
