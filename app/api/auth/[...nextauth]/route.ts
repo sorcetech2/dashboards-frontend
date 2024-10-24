@@ -4,10 +4,10 @@ import { validateUser } from '@/lib/users';
 // import { User } from 'next-auth';
 
 export const {
-  handlers: { GET, POST },
-  signIn,
-  signOut,
-  auth
+  handlers: { GET, POST }
+  // signIn,
+  // signOut,
+  // auth
 } = NextAuth({
   // callbacks: {
   //   async session({ session, user }) {
