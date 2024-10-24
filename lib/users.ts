@@ -1,0 +1,145 @@
+// Define the DashboardUser type
+interface DashboardUser {
+  id: string;
+  username: string;
+  code: string;
+  displayName: string;
+  admin: boolean;
+}
+
+// Create an array of DashboardUser instances
+const hardcodedUsers: DashboardUser[] = [
+  {
+    id: '14',
+    username: 'petnutrition',
+    code: 'f6cb0b70f',
+    displayName: 'Pet Nutrition',
+    admin: false
+  },
+  {
+    id: '16',
+    username: 'royalcanin',
+    code: 'ffbe77c6',
+    displayName: 'Royal Canin',
+    admin: false
+  },
+  {
+    id: '19',
+    username: 'ferrotec',
+    code: 'dc63d35f',
+    displayName: 'Ferrotec',
+    admin: false
+  },
+  {
+    id: '2',
+    username: 'sorce',
+    code: '93418d',
+    displayName: 'SORCE',
+    admin: true
+  },
+  {
+    id: '25',
+    username: 'vipjune2023',
+    code: '9fsm9sua',
+    displayName: 'VIP June 2023',
+    admin: false
+  },
+  {
+    id: '26',
+    username: 'regenerative_summer_camp',
+    code: '84tls9aod',
+    displayName: 'Regenerative Summer Camp',
+    admin: false
+  },
+  {
+    id: '27',
+    username: 'erin_heidenreich',
+    code: '73hsd393',
+    displayName: 'Erin Heidenreich',
+    admin: false
+  },
+  {
+    id: '30',
+    username: 'elemental_shift_consulting',
+    code: '41doms77%',
+    displayName: 'Elemental Shift Consulting',
+    admin: false
+  },
+  {
+    id: '32',
+    username: 'bonusly',
+    code: '4wuklis43',
+    displayName: 'Bonusly',
+    admin: false
+  },
+  {
+    id: '33',
+    username: 'liberty_company',
+    code: 'k48ferfly3',
+    displayName: 'Liberty Company',
+    admin: false
+  },
+  {
+    id: '35',
+    username: 'regenerate_mentorship',
+    code: '7wiwakuh98',
+    displayName: 'Regenerate Mentorship',
+    admin: false
+  },
+  {
+    id: '36',
+    username: 'that_hrv_guy',
+    code: 'k8bera55',
+    displayName: 'That HRV guy',
+    admin: false
+  },
+  {
+    id: '38',
+    username: 'dotconnect',
+    code: 'a1p3n42',
+    displayName: 'DotConnect',
+    admin: false
+  },
+  {
+    id: '39',
+    username: 'ashland_studios',
+    code: 'c%4td8g!',
+    displayName: 'Ashland Studios',
+    admin: false
+  },
+  {
+    id: '40',
+    username: 'ima',
+    code: 'h8r7me%8',
+    displayName: 'IMA',
+    admin: false
+  }
+];
+
+export function validateUser(
+  username: unknown,
+  password: unknown
+): DashboardUser | undefined {
+  return hardcodedUsers.find((value) => {
+    return value.username === username && value.code === password;
+  });
+}
+
+export function isAdmin(name: string | undefined | null): boolean {
+  const user = findUserByName(name);
+  if (!user) return false;
+  return user.admin;
+}
+
+export function findUserByName(
+  name: string | undefined | null
+): DashboardUser | null {
+  if (!name) return null;
+  let user = hardcodedUsers.find((value) => {
+    return value.username == name;
+  });
+  if (!user) {
+    return null;
+  }
+  return user;
+}
