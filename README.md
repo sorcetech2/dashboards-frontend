@@ -43,6 +43,8 @@ AWS_ACCESS_KEY_ID=..
 
 ## Original Setup (one-time, not needed anymore)
 
+This shouldn't be needed anymore! Already all setup
+
 ```bash
 npm i -g vercel
 vercel link
