@@ -52,7 +52,17 @@ export default function HexacoSection({ chartData }: HexacoSectionProps) {
               />
             )}
           </div>
-          <div className="hidden">
+          <div>
+            <div className="mb-4">
+              {chartData?.archetype && <>
+                <h3 className="text-m font-semibold">Archetype: {chartData?.archetype}</h3>
+                <p className="text-sm text-gray-500">
+                  {chartData?.archetype}
+                </p>
+              </>}
+            </div>
+          </div>
+          {/* <div className="hidden">
             {identifiers.map((identifier) => (
               <div key={identifier} className="mb-4">
                 <h3 className="text-m font-semibold">
@@ -67,7 +77,7 @@ export default function HexacoSection({ chartData }: HexacoSectionProps) {
                 </p>
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

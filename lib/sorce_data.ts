@@ -13,6 +13,7 @@ interface SorceData {
   name: string;
   logo: string;
   charts: Chart[];
+  archetype: string;
 }
 
 interface Chart {
@@ -22,6 +23,7 @@ interface Chart {
   main: MainChart;
   self_reported_over_time: SelfReportedData[];
   today: TodayData[];
+  archetype: string;
 }
 
 interface MainChart {
