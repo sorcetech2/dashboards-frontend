@@ -120,6 +120,13 @@ const hardcodedUsers: DashboardUser[] = [
     code: 't4uyo%nar!',
     displayName: 'SORCE Lab x Jade Wolf',
     admin: false
+  },
+  {
+    id: '42',
+    username: 'the_practice',
+    code: 'm4as!kra%',
+    displayName: 'The Practice',
+    admin: false
   }
 ];
 
