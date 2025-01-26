@@ -127,7 +127,14 @@ const hardcodedUsers: DashboardUser[] = [
     code: 'm4as!kra%',
     displayName: 'The Practice',
     admin: false
-  }
+  },
+  {
+    id: '44',
+    username: 'authenica',
+    code: 'd4mini%eul55',
+    displayName: 'Authenica',
+    admin: false
+  },
 ];
 
 export function validateUser(
