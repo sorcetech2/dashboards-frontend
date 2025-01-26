@@ -134,7 +134,7 @@ const hardcodedUsers: DashboardUser[] = [
     code: 'd4mini%eul55',
     displayName: 'Authenica',
     admin: false
-  },
+  }
 ];
 
 export function validateUser(
