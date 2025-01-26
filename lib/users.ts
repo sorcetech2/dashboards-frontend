@@ -152,6 +152,7 @@ export function isAdmin(name: string | undefined | null): boolean {
   return user.admin;
 }
 
+// Find user by name
 export function findUserByName(
   name: string | undefined | null
 ): DashboardUser | null {
