@@ -3,7 +3,7 @@ import { TopCard, HelpTooltip } from './top-card';
 import { Badge } from '@/components/ui/badge';
 
 
-export const EngagementRate = ({chartData}: {chartData: Chart | undefined}) => {
+export const EngagementRate = ({ chartData }: { chartData: Chart | undefined }) => {
   var engagementToday = 0;
   var engagementWeekly = 0;
   var engagementMonthly = 0;
@@ -32,39 +32,39 @@ export const EngagementRate = ({chartData}: {chartData: Chart | undefined}) => {
       chartData.today[0].hrv_quarter_trend_percent || 0;
   }
 
-    return (
-        <div className="md:col-span-3">
-        <TopCard title="Engagement Rate">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="items-center gap-2 inline-flex">
-              <Badge>Today</Badge>
-              <span className="text-xl font-bold">
-                {engagementToday}%
-              </span>
-            </div>
-
-            <div className="items-center gap-2 inline-flex">
-              <Badge>Weekly</Badge>
-              <span className="text-xl font-bold">
-                {engagementWeekly}%
-              </span>
-            </div>
-
-            <div className="items-center gap-2 inline-flex">
-              <Badge>Monthly</Badge>
-              <span className="text-xl font-bold">
-                {engagementMonthly}%
-              </span>
-            </div>
-
-            <div className="items-center gap-2 inline-flex">
-              <Badge>All-Time</Badge>
-              <span className="text-xl font-bold">
-                {engagementAlltime}%
-              </span>
-            </div>
+  return (
+    <div className="md:col-span-3">
+      <TopCard title="Engagement Rate">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="items-center gap-2 inline-flex">
+            <Badge>Today</Badge>
+            <span className="text-xl font-bold">
+              {engagementToday}
+            </span>
           </div>
-        </TopCard>
-      </div>
-    )
+
+          <div className="items-center gap-2 inline-flex">
+            <Badge>Weekly</Badge>
+            <span className="text-xl font-bold">
+              {engagementWeekly}
+            </span>
+          </div>
+
+          <div className="items-center gap-2 inline-flex">
+            <Badge>Monthly</Badge>
+            <span className="text-xl font-bold">
+              {engagementMonthly}
+            </span>
+          </div>
+
+          <div className="items-center gap-2 inline-flex">
+            <Badge>All-Time</Badge>
+            <span className="text-xl font-bold">
+              {engagementAlltime}
+            </span>
+          </div>
+        </div>
+      </TopCard>
+    </div>
+  )
 }
