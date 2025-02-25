@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { rmpColor } from '@/lib/utils';
 
 
-export const AverageHRV = ({chartData}: {chartData: Chart | undefined}) => {
+export const AverageHRV = ({ chartData }: { chartData: Chart | undefined }) => {
   var averageHrvWeekly = 0;
   var averageHrvMonthly = 0;
   var averageHrv3Months = 0;
@@ -27,45 +27,45 @@ export const AverageHRV = ({chartData}: {chartData: Chart | undefined}) => {
 
   function formatTrend(trend: number): string {
     if (trend > 0) {
-      return `+${trend}%`;
+      return `+${trend}`;
     } else if (trend == 0) {
       return '';
     } else {
-      return `${trend}%`;
+      return `${trend}`;
     }
   }
 
-    return (
-      <TopCard title="Average HRV">
-              <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
-                <div className="items-center gap-2 inline-flex">
-                  <Badge>Weekly</Badge>
-                  <span className="text-xl font-bold">{averageHrvWeekly}%</span>
-                  <span className="text-xl text-muted-foreground">
-                    {formatTrend(hrv_week_trend_percent)}
-                  </span>
-                </div>
+  return (
+    <TopCard title="Average HRV">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
+        <div className="items-center gap-2 inline-flex">
+          <Badge>Weekly</Badge>
+          <span className="text-xl font-bold">{averageHrvWeekly}%</span>
+          <span className="text-xl text-muted-foreground">
+            {formatTrend(hrv_week_trend_percent)}
+          </span>
+        </div>
 
-                <div className="items-center gap-2 inline-flex justify-center">
-                  <Badge>Monthly</Badge>
-                  <span className="text-xl font-bold">
-                    {averageHrvMonthly}%
-                  </span>
-                  <span className="text-xl text-muted-foreground">
-                    {formatTrend(hrv_month_trend_percent)}
-                  </span>
-                </div>
+        <div className="items-center gap-2 inline-flex justify-center">
+          <Badge>Monthly</Badge>
+          <span className="text-xl font-bold">
+            {averageHrvMonthly}%
+          </span>
+          <span className="text-xl text-muted-foreground">
+            {formatTrend(hrv_month_trend_percent)}
+          </span>
+        </div>
 
-                <div className="items-center gap-2 inline-flex justify-end">
-                  <Badge>3 Months</Badge>
-                  <span className="text-xl font-bold">
-                    {averageHrv3Months}%
-                  </span>
-                  <span className="text-xl text-muted-foreground">
-                    {formatTrend(hrv_quarter_trend_percent)}
-                  </span>
-                </div>
-              </div>
-            </TopCard>
-    )
+        <div className="items-center gap-2 inline-flex justify-end">
+          <Badge>3 Months</Badge>
+          <span className="text-xl font-bold">
+            {averageHrv3Months}%
+          </span>
+          <span className="text-xl text-muted-foreground">
+            {formatTrend(hrv_quarter_trend_percent)}
+          </span>
+        </div>
+      </div>
+    </TopCard>
+  )
 }

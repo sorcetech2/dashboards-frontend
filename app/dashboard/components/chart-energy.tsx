@@ -110,7 +110,7 @@ export default function EnergyChart({ data }: EnergyChartProps) {
           theme={VictoryTheme.clean}
           scale={{ x: 'time' }}
           padding={{ top: 50, bottom: 50, left: 40, right: 40 }}
-          minDomain={{ y: min }}
+          minDomain={{ y: 50 }}
           height={300}
           width={containerWidth}
           containerComponent={
