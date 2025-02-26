@@ -40,7 +40,7 @@ export const AverageHRV = ({ chartData }: { chartData: Chart | undefined }) => {
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
         <div className="items-center gap-2 inline-flex">
           <Badge>Weekly</Badge>
-          <span className="text-xl font-bold">{averageHrvWeekly}%</span>
+          <span className="text-xl font-bold">{averageHrvWeekly}</span>
           <span className="text-xl text-muted-foreground">
             {formatTrend(hrv_week_trend_percent)}
           </span>
@@ -49,7 +49,7 @@ export const AverageHRV = ({ chartData }: { chartData: Chart | undefined }) => {
         <div className="items-center gap-2 inline-flex justify-center">
           <Badge>Monthly</Badge>
           <span className="text-xl font-bold">
-            {averageHrvMonthly}%
+            {averageHrvMonthly}
           </span>
           <span className="text-xl text-muted-foreground">
             {formatTrend(hrv_month_trend_percent)}
@@ -59,7 +59,7 @@ export const AverageHRV = ({ chartData }: { chartData: Chart | undefined }) => {
         <div className="items-center gap-2 inline-flex justify-end">
           <Badge>3 Months</Badge>
           <span className="text-xl font-bold">
-            {averageHrv3Months}%
+            {averageHrv3Months}
           </span>
           <span className="text-xl text-muted-foreground">
             {formatTrend(hrv_quarter_trend_percent)}

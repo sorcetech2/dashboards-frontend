@@ -39,28 +39,28 @@ export const EngagementRate = ({ chartData }: { chartData: Chart | undefined }) 
           <div className="items-center gap-2 inline-flex">
             <Badge>Today</Badge>
             <span className="text-xl font-bold">
-              {engagementToday}
+              {engagementToday}%
             </span>
           </div>
 
           <div className="items-center gap-2 inline-flex">
             <Badge>Weekly</Badge>
             <span className="text-xl font-bold">
-              {engagementWeekly}
+              {engagementWeekly}%
             </span>
           </div>
 
           <div className="items-center gap-2 inline-flex">
             <Badge>Monthly</Badge>
             <span className="text-xl font-bold">
-              {engagementMonthly}
+              {engagementMonthly}%
             </span>
           </div>
 
           <div className="items-center gap-2 inline-flex">
             <Badge>All-Time</Badge>
             <span className="text-xl font-bold">
-              {engagementAlltime}
+              {engagementAlltime}%
             </span>
           </div>
         </div>
