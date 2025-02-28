@@ -197,14 +197,31 @@ export default function EnergyChart({ data }: EnergyChartProps) {
 
 // Custom label component
 const CustomLabel = (props: any) => {
-  const { text }: { text: string[] } = props;
-  var entry = 'No Data';
-  for (let i = 0; i < text.length; i++) {
-    const components = text[i].split(';');
-    if (components[2] !== 'N/A') {
+  const { text, datum, x, y } = props;
+
+  // If we don't have valid coordinates, don't render the tooltip
+  if (y === undefined || x === undefined) {
+    return null;
+  }
+
+  let entry = 'No Data';
+
+  // Handle both array and string cases for text
+  if (Array.isArray(text)) {
+    for (let i = 0; i < text.length; i++) {
+      const components = text[i].split(';');
+      if (components.length >= 3 && components[2] !== 'N/A') {
+        entry = `${components[0]}\nValue: ${components[1]}\nRMP: ${components[2]}`;
+        break;
+      }
+    }
+  } else if (typeof text === 'string') {
+    const components = text.split(';');
+    if (components.length >= 3 && components[2] !== 'N/A') {
       entry = `${components[0]}\nValue: ${components[1]}\nRMP: ${components[2]}`;
     }
   }
+
   return <VictoryTooltip {...props} text={entry} />;
 };
 
