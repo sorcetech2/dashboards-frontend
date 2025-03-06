@@ -21,7 +21,7 @@ interface EnergyChartProps {
 
 export default function EnergyChart({ data }: EnergyChartProps) {
   const [currentRange, setCurrentRange] = useState<string>('1month');
-  const { range, nulls, line, markers, rmps, min } = data;
+  const { range, nulls, line, markers, rmps, min, max } = data;
 
   const [containerWidth, setContainerWidth] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -110,7 +110,8 @@ export default function EnergyChart({ data }: EnergyChartProps) {
           theme={VictoryTheme.clean}
           scale={{ x: 'time' }}
           padding={{ top: 50, bottom: 50, left: 40, right: 40 }}
-          minDomain={{ y: 50 }}
+          minDomain={{ y: min }}
+          maxDomain={{ y: max }}
           height={300}
           width={containerWidth}
           containerComponent={
