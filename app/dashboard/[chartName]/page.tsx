@@ -25,7 +25,7 @@ import dynamic from 'next/dynamic';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-import { ChartState } from '@/lib/sorce_data';
+import { ChartState, SorceData } from '@/lib/sorce_data';
 import { rmpColor } from '@/lib/utils';
 import { retrieveData } from '@/lib/data';
 import { auth } from '@/lib/auth';
@@ -38,7 +38,7 @@ import { AverageHRV } from '../components/average-hrv';
 import HexacoSection from '../components/hexaco-section';
 import StatusSection from '../components/status-section';
 import { MainNav } from '../components/main-nav';
-
+import { Session } from 'next-auth';
 const EnergyChart = dynamic(() => import('../components/chart-energy'), {
   ssr: false
 });
@@ -91,6 +91,52 @@ export default async function DashboardPage({
     redirect('/login');
   }
 
+  if (data === null) {
+    return (
+      <>
+        <div className="hidden flex-col md:flex">
+          <div className="border-b">
+            <div className="flex h-16 items-center px-4">
+              <Image
+                src="/logo2.png"
+                alt="SORCE"
+                width={120}
+                height={40}
+                className="inline-block mr-2"
+              />
+              {/* {admin && <MainNav className="mx-6" />} */}
+              <div className="ml-auto flex items-center space-x-4 pr-4">
+
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex items-center justify-between space-y-2">
+              <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+              <div className="flex items-center space-x-2">
+                <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-2xl font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-gray-400">
+                  You're logged in, but no data is available for you yet.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  } else {
+    return actualDashboard({ data, params, session });
+  }
+}
+
+async function actualDashboard({
+  data,
+  params,
+  session
+}: {
+  data: SorceData;
+  params: { chartId: string };
+  session: Session;
+}) {
   const chartState: ChartState = {
     data: data,
     currentDate: new Date(),
@@ -112,7 +158,7 @@ export default async function DashboardPage({
   const rmp = chartData?.today[0].rmp || 'No Data';
   const color = rmpColor(rmp);
 
-  const admin = isAdmin(session.user.name);
+  // const admin = isAdmin(session.user.name);
 
   return (
     <>
