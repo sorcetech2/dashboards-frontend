@@ -56,7 +56,7 @@ export async function retrieveData(
     return JSON.parse(jsonData);
   } catch (error) {
     console.error('Error reading data:', error);
-    throw error;
+    return null;
   }
 }
 
