@@ -34,7 +34,7 @@ export const {
 
         // logic to verify if the user exists
         // user = await getUserFromDb(credentials.email, pwHash)
-        user = validateUser(credentials.username, credentials.password);
+        user = await validateUser(credentials.username, credentials.password);
         // user = hardcodedUsers.find((value) => {
         //   return (
         //     value.username === credentials.username &&

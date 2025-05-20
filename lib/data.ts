@@ -31,10 +31,12 @@ export async function retrieveData(
   username: string | null | undefined
 ): Promise<SorceData | null> {
   if (!username) {
+    console.log('No username provided');
     return null;
   }
-  const user = findUserByName(username);
+  const user = await findUserByName(username);
   if (!user) {
+    console.log('User not found for', username);
     return null;
   }
 

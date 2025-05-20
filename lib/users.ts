@@ -1,3 +1,5 @@
+"use server";
+
 // Define the DashboardUser type
 interface DashboardUser {
   id: string;
@@ -144,27 +146,27 @@ const hardcodedUsers: DashboardUser[] = [
   }
 ];
 
-export function validateUser(
+export async function validateUser(
   username: unknown,
   password: unknown
-): DashboardUser | undefined {
+): Promise<DashboardUser | undefined> {
   return hardcodedUsers.find((value) => {
     return value.username === username && value.code === password;
   });
 }
 
-export function isAdmin(name: string | undefined | null): boolean {
-  const user = findUserByName(name);
+export async function isAdmin(name: string | undefined | null): Promise<boolean> {
+  const user = await findUserByName(name);
   if (!user) return false;
   return user.admin;
 }
 
 // Find user by name
-export function findUserByName(
+export async function findUserByName(
   name: string | undefined | null
-): DashboardUser | null {
+): Promise<DashboardUser | null> {
   if (!name) return null;
-  let user = hardcodedUsers.find((value) => {
+  let user = await hardcodedUsers.find((value) => {
     return value.username == name;
   });
   if (!user) {

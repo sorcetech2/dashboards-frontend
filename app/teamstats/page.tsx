@@ -21,7 +21,7 @@ export default async function () {
   if (!session || !session.user) {
     redirect('/login');
   }
-  const admin = isAdmin(session.user.name);
+  const admin = await isAdmin(session.user.name);
   if (!admin) {
     redirect('/dashboard');
   }

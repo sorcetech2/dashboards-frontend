@@ -1,6 +1,7 @@
 import './globals.css';
 
 import { Analytics } from '@vercel/analytics/react';
+import { SessionProvider } from "next-auth/react"
 
 export const metadata = {
   title: 'SORCE Dashboards',
@@ -20,7 +21,9 @@ export default function RootLayout({
         style={{ backgroundColor: 'rgba(4,16,33,1)' }}
         className="dark flex min-h-screen w-full flex-col"
       >
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
       </body>
       <Analytics />
     </html>

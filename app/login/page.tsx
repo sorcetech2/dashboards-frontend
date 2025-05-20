@@ -17,11 +17,16 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const currentUsername = formData.get('username') as string;
+    const currentPassword = formData.get('password') as string;
+
+    console.log('Submitting form with username:', currentUsername, 'and password:', currentPassword);
     await signIn('credentials', {
-      username,
-      password,
+      username: currentUsername,
+      password: currentPassword,
       callbackUrl: '/dashboard'
     });
   };
