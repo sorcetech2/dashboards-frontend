@@ -148,7 +148,7 @@ const hardcodedUsers: DashboardUser[] = [
     id: '48',
     username: 'authenica2',
     code: 'b9oYi!BuR72',
-    displayName: 'Authenica',
+    displayName: 'Authenica Cohort 2',
     admin: false
   }
 ];
