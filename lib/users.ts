@@ -143,6 +143,13 @@ const hardcodedUsers: DashboardUser[] = [
     code: 'e1ne-meg8-yet%',
     displayName: 'WWCMA',
     admin: false
+  },
+  {
+    id: '48',
+    username: 'authenica2',
+    code: 'b9oYi!BuR72',
+    displayName: 'Authenica',
+    admin: false
   }
 ];
 
