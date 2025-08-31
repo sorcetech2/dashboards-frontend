@@ -151,13 +151,13 @@ const hardcodedUsers: DashboardUser[] = [
     displayName: 'Authenica Cohort 2',
     admin: false
   },
-      {
-    id: '49',
-    username: 'the_practice_30days',
-    code: 'glowing2-waves!',
-    displayName: 'The 30-Day Practice Experience',
-    admin: false
-  },
+  //     {
+  //   id: '49',
+  //   username: 'the_practice_30days',
+  //   code: 'glowing2-waves!',
+  //   displayName: 'The 30-Day Practice Experience',
+  //   admin: false
+  // },
       {
     id: '50',
     username: 'MOSS',
