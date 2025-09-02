@@ -151,13 +151,13 @@ const hardcodedUsers: DashboardUser[] = [
     displayName: 'Authenica Cohort 2',
     admin: false
   },
-      {
-    id: '49',
-    username: 'the_practice_30days',
-    code: 'glowing2-waves!',
-    displayName: 'The 30-Day Practice Experience',
-    admin: false
-  },
+  //     {
+  //   id: '49',
+  //   username: 'the_practice_30days',
+  //   code: 'glowing2-waves!',
+  //   displayName: 'The 30-Day Practice Experience',
+  //   admin: false
+  // },
       {
     id: '50',
     username: 'MOSS',
@@ -177,6 +177,13 @@ const hardcodedUsers: DashboardUser[] = [
     username: 'authenica3',
     code: 'feeling%-good8',
     displayName: 'Authenica Cohort 3',
+    admin: false
+  },
+    {
+    id: '53',
+    username: 'unilever',
+    code: 'sun-relax%',
+    displayName: 'Unilever',
     admin: false
   },
 ];
