@@ -186,6 +186,13 @@ const hardcodedUsers: DashboardUser[] = [
     displayName: 'Unilever',
     admin: false
   },
+      {
+    id: '54',
+    username: 'ucb',
+    code: 'breathe-2calm!',
+    displayName: 'UCB',
+    admin: false
+  },
 ];
 
 export async function validateUser(
