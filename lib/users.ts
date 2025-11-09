@@ -193,13 +193,6 @@ const hardcodedUsers: DashboardUser[] = [
     displayName: 'UCB',
     admin: false
   },
-        {
-    id: '55',
-    username: 'the_practice_winter2025',
-    code: 'relax-cozy55',
-    displayName: 'The Practice: Winter Cohort',
-    admin: false
-  },
 ];
 
 export async function validateUser(
