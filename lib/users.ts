@@ -200,6 +200,27 @@ const hardcodedUsers: DashboardUser[] = [
     displayName: 'The Practice: Winter Cohort',
     admin: false
   },
+          {
+    id: '56',
+    username: 'the_practice_spring2026',
+    code: 'zen-brea$thing78',
+    displayName: 'The Practice: Spring Cohort (2026)',
+    admin: false
+  },
+          {
+    id: '57',
+    username: 'the_practice_summer2026',
+    code: 'calm-100%-sunny',
+    displayName: 'The Practice: Summer Cohort (2026)',
+    admin: false
+  },
+          {
+    id: '58',
+    username: 'the_practice_fall2026',
+    code: 'golden-leafes#12',
+    displayName: 'The Practice: Fall Cohort (2026)',
+    admin: false
+  },
 ];
 
 export async function validateUser(
