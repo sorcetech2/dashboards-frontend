@@ -221,6 +221,13 @@ const hardcodedUsers: DashboardUser[] = [
     displayName: 'The Practice: Fall Cohort (2026)',
     admin: false
   },
+            {
+    id: '59',
+    username: 'irg',
+    code: 'health-relax92!',
+    displayName: 'IRG',
+    admin: false
+  },
 ];
 
 export async function validateUser(
