@@ -10,6 +10,8 @@ export default async function DefaultDashboardPage() {
     redirect('/login');
   }
 
+  console.log('session', session);
+
 
   let data: SorceData | null = null;
   try {

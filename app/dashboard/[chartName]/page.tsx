@@ -21,7 +21,6 @@ import * as React from 'react';
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
-import dynamic from 'next/dynamic';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -38,10 +37,8 @@ import { AverageHRV } from '../components/average-hrv';
 import HexacoSection from '../components/hexaco-section';
 import StatusSection from '../components/status-section';
 import { MainNav } from '../components/main-nav';
+import EnergyChart from '../components/chart-energy';
 import { Session } from 'next-auth';
-const EnergyChart = dynamic(() => import('../components/chart-energy'), {
-  ssr: false
-});
 
 export const metadata: Metadata = {
   title: 'Dashboard',

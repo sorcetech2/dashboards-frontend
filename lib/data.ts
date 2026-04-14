@@ -5,7 +5,7 @@ import { findUserByName } from './users';
 import crypto from 'crypto';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const isDebug = false;
+const isDebug = true;
 const BUCKET_NAME = 'sorce-dashboard-data';
 
 // Initialize S3 client
@@ -52,6 +52,7 @@ export async function retrieveData(
       jsonData = await fs.readFile(filePath, 'utf-8');
     } else {
       // Read from S3 in production mode
+      console.log(`companies/${filename}`);
       jsonData = await readFromS3(`companies/${filename}`);
     }
 

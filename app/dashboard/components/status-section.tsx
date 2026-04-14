@@ -1,12 +1,10 @@
+'use client';
+
 import { SorceData, ChartState, TodayData, Chart } from '@/lib/sorce_data';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { TopCard, HelpTooltip } from './top-card';
-import dynamic from 'next/dynamic';
-
-const SparklineChart = dynamic(() => import('./chart-sparkline'), {
-  ssr: false
-});
+import SparklineChart from './chart-sparkline';
 
 interface StatusSectionProps {
   chartData: Chart | undefined;

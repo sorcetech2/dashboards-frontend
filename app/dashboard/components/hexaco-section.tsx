@@ -1,11 +1,9 @@
+'use client';
+
 import * as React from 'react';
 import { Chart } from '@/lib/sorce_data';
 import { HelpTooltip } from './top-card';
-import dynamic from 'next/dynamic';
-
-const HexacoChart = dynamic(() => import('./chart-hexaco'), {
-  ssr: false
-});
+import HexacoChart from './chart-hexaco';
 
 interface HexacoSectionProps {
   chartData: Chart | undefined;
