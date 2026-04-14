@@ -5,13 +5,38 @@ import { findUserByName } from './users';
 import crypto from 'crypto';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const isDebug = true;
 const BUCKET_NAME = 'sorce-dashboard-data';
+const AWS_REGION = process.env.AWS_DEFAULT_REGION ?? 'us-east-1';
 
 // Initialize S3 client
 const s3Client = new S3Client({
-  region: 'us-east-1' // replace with your region
+  region: AWS_REGION
 });
+
+function getDataSource(): 'local' | 's3' {
+  const configuredSource = process.env.SORCE_DATA_SOURCE?.toLowerCase();
+
+  if (configuredSource === 'local' || configuredSource === 's3') {
+    return configuredSource;
+  }
+
+  return process.env.NODE_ENV === 'production' ? 's3' : 'local';
+}
+
+async function readFromLocalFile(filename: string): Promise<string> {
+  const filePath = path.join(process.cwd(), 'public', filename);
+  return await fs.readFile(filePath, 'utf-8');
+}
+
+async function readDataFile(filename: string): Promise<string> {
+  const dataSource = getDataSource();
+
+  if (dataSource === 'local') {
+    return await readFromLocalFile(filename);
+  }
+
+  return await readFromS3(`companies/${filename}`);
+}
 
 async function readFromS3(key: string): Promise<string> {
   const command = new GetObjectCommand({
@@ -44,18 +69,7 @@ export async function retrieveData(
   console.log(filename);
 
   try {
-    let jsonData: string;
-
-    if (isDebug) {
-      // Read from filesystem in debug mode
-      const filePath = path.join(process.cwd(), 'public', filename);
-      jsonData = await fs.readFile(filePath, 'utf-8');
-    } else {
-      // Read from S3 in production mode
-      console.log(`companies/${filename}`);
-      jsonData = await readFromS3(`companies/${filename}`);
-    }
-
+    const jsonData = await readDataFile(filename);
     return JSON.parse(jsonData);
   } catch (error) {
     console.error('Error reading data:', error);
@@ -67,17 +81,7 @@ export async function teamStats(): Promise<CompanyStats[]> {
   const filename = 'team_stats.json';
 
   try {
-    let jsonData: string;
-
-    if (isDebug) {
-      // Read from filesystem in debug mode
-      const filePath = path.join(process.cwd(), 'public', filename);
-      jsonData = await fs.readFile(filePath, 'utf-8');
-    } else {
-      // Read from S3 in production mode
-      jsonData = await readFromS3(`companies/${filename}`);
-    }
-
+    const jsonData = await readDataFile(filename);
     return JSON.parse(jsonData) as Array<CompanyStats>;
   } catch (error) {
     console.error('Error reading team stats:', error);

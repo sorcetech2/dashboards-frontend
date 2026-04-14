@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials';
 import { validateUser } from './users'; // Import the validateUser function
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   providers: [
     Credentials({
       // The name to display on the sign in form (e.g. "Sign in with...")
