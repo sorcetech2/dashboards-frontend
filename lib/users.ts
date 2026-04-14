@@ -1,4 +1,4 @@
-"use server";
+'use server';
 
 // Define the DashboardUser type
 interface DashboardUser {
@@ -158,77 +158,78 @@ const hardcodedUsers: DashboardUser[] = [
   //   displayName: 'The 30-Day Practice Experience',
   //   admin: false
   // },
-      {
+  {
     id: '50',
     username: 'MOSS',
     code: 'zen-harbor4%',
     displayName: 'MOSS',
     admin: false
   },
-      {
+  {
     id: '51',
     username: 'the_practice_fall',
     code: 'calm-breeze3!',
     displayName: 'The Practice: Fall Cohort',
     admin: false
   },
-    {
+  {
     id: '52',
     username: 'authenica3',
     code: 'feeling%-good8',
     displayName: 'Authenica Cohort 3',
     admin: false
   },
-    {
+  {
     id: '53',
     username: 'unilever',
     code: 'sun-relax%',
     displayName: 'Unilever',
     admin: false
   },
-      {
+  {
     id: '54',
     username: 'ucb',
     code: 'breathe-2calm!',
     displayName: 'UCB',
     admin: false
   },
-        {
+  {
     id: '55',
     username: 'the_practice_winter2025',
     code: 'relax-cozy55',
     displayName: 'The Practice: Winter Cohort',
     admin: false
   },
-          {
+  {
     id: '56',
     username: 'the_practice_spring2026',
     code: 'zen-brea$thing78',
     displayName: 'The Practice: Spring Cohort (2026)',
     admin: false
   },
-          {
+  {
     id: '57',
     username: 'the_practice_summer2026',
     code: 'calm-100%-sunny',
     displayName: 'The Practice: Summer Cohort (2026)',
     admin: false
   },
-          {
+  {
     id: '58',
     username: 'the_practice_fall2026',
     code: 'golden-leafes#12',
     displayName: 'The Practice: Fall Cohort (2026)',
     admin: false
   },
-            {
+  {
     id: '59',
     username: 'irg',
     code: 'health-relax92!',
     displayName: 'IRG',
     admin: false
-  },
+  }
 ];
+// just so
 
 export async function validateUser(
   username: unknown,
@@ -239,7 +240,9 @@ export async function validateUser(
   });
 }
 
-export async function isAdmin(name: string | undefined | null): Promise<boolean> {
+export async function isAdmin(
+  name: string | undefined | null
+): Promise<boolean> {
   const user = await findUserByName(name);
   if (!user) return false;
   return user.admin;
