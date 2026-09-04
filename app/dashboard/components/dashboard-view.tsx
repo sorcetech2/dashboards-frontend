@@ -13,11 +13,13 @@ import { TopCard } from './top-card';
 export function DashboardView({
   data,
   chartData,
-  isAdmin
+  isAdmin,
+  isStale
 }: {
   data: SorceData;
   chartData: Chart;
   isAdmin: boolean;
+  isStale: boolean;
 }) {
   const allCharts: SwitchableTeam[] = data.charts.map((chart) => ({
     name: chart.name,
@@ -32,7 +34,6 @@ export function DashboardView({
         new Date(sourceDate)
       )
     : null;
-
   return (
     <div className="flex min-h-screen flex-col">
       <DashboardHeader isAdmin={isAdmin}>
@@ -47,6 +48,12 @@ export function DashboardView({
           {dataDate && (
             <p className="inline-flex w-fit items-center rounded-full border px-2.5 py-0.5 text-sm font-semibold text-gray-400">
               Last update {dataDate}
+            </p>
+          )}
+          {isStale && (
+            <p className="text-sm text-amber-300" role="status">
+              This dashboard may be stale; it was generated more than 48 hours
+              ago.
             </p>
           )}
           {data.dataQualityWarnings && data.dataQualityWarnings.length > 0 && (

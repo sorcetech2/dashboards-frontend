@@ -1,5 +1,5 @@
 import { requirePrincipal } from '@/lib/auth-guards';
-import { retrieveDashboardData } from '@/lib/data';
+import { isDashboardDataStale, retrieveDashboardData } from '@/lib/data';
 import { DashboardResultState } from './components/dashboard-result-state';
 import { DashboardState } from './components/dashboard-state';
 import { DashboardView } from './components/dashboard-view';
@@ -28,6 +28,7 @@ export default async function DefaultDashboardPage() {
       data={result.data}
       chartData={firstChart}
       isAdmin={principal.role === 'admin'}
+      isStale={isDashboardDataStale(result.data)}
     />
   );
 }

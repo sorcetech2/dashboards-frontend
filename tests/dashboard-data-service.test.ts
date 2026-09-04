@@ -1,7 +1,8 @@
 import populatedDashboard from './fixtures/dashboard/populated-dashboard.json';
 import populatedTeamStats from './fixtures/dashboard/populated-team-stats.json';
 import { describe, expect, it, vi } from 'vitest';
-import { createDashboardDataService } from '@/lib/data';
+import { parseDashboardData } from '@/lib/dashboard-data-contract';
+import { createDashboardDataService, isDashboardDataStale } from '@/lib/data';
 import type { Principal } from '@/lib/users';
 
 const viewer: Principal = {
@@ -108,5 +109,45 @@ describe('authorized dashboard data service', () => {
     await expect(missingService.dashboard(viewer)).resolves.toEqual({
       status: 'notGenerated'
     });
+  });
+
+  it('caches only after authorization and keeps tenant IDs in the boundary', async () => {
+    let now = 1_000;
+    const readObject = vi.fn().mockResolvedValue({
+      status: 'ok',
+      body: JSON.stringify(populatedDashboard)
+    });
+    const resolvePrincipal = vi.fn(resolver);
+    const service = createDashboardDataService({
+      readObject,
+      resolvePrincipal,
+      teamStatsKey: 'companies/team_stats.json',
+      cacheTtlMs: 5_000,
+      now: () => now
+    });
+
+    await service.dashboard(viewer);
+    await service.dashboard(viewer);
+    expect(resolvePrincipal).toHaveBeenCalledTimes(2);
+    expect(readObject).toHaveBeenCalledTimes(1);
+
+    now += 5_001;
+    await service.dashboard(viewer);
+    expect(resolvePrincipal).toHaveBeenCalledTimes(3);
+    expect(readObject).toHaveBeenCalledTimes(2);
+  });
+
+  it('labels producer data stale only after the documented 48-hour window', () => {
+    const data = parseDashboardData({
+      ...populatedDashboard,
+      generatedAt: '2026-09-01T12:00:00Z'
+    });
+
+    expect(isDashboardDataStale(data, Date.parse('2026-09-03T11:59:59Z'))).toBe(
+      false
+    );
+    expect(isDashboardDataStale(data, Date.parse('2026-09-03T12:00:01Z'))).toBe(
+      true
+    );
   });
 });

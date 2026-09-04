@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { requirePrincipal } from '@/lib/auth-guards';
-import { retrieveDashboardData } from '@/lib/data';
+import { isDashboardDataStale, retrieveDashboardData } from '@/lib/data';
 import { DashboardResultState } from '../components/dashboard-result-state';
 import { DashboardView } from '../components/dashboard-view';
 
@@ -39,6 +39,7 @@ export default async function DashboardPage({
       data={result.data}
       chartData={chartData}
       isAdmin={principal.role === 'admin'}
+      isStale={isDashboardDataStale(result.data)}
     />
   );
 }

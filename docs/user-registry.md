@@ -49,12 +49,13 @@ node scripts/migrate-users-to-hashed-registry.mjs \
 ```
 
 The current local migration preserves all 30 existing hashed accounts and
-legacy `companies/<hash>.data.json` object keys. The exact production active
-user subset must be confirmed before any upload; this repository intentionally
-does not guess which accounts should remain active.
+legacy `companies/<hash>.data.json` object keys. Because the seven accounts
+still in use were not known, the initial production registry intentionally
+contains all 30 legacy accounts. This preserves every existing credential and
+avoids guessing which accounts can be removed.
 
-Once the exact normalized usernames are supplied, prepare the reduced registry
-with `--retain-users`. The option is preparation-only, requires a non-empty
+After account usage has been confirmed, a future operator can prepare a reduced
+registry with `--retain-users`. The option is preparation-only, requires a non-empty
 comma-separated list with no duplicates, requires every username to exist in
 the source, retains only those users and their referenced tenants, and runs the
 full invariant validation again:
@@ -146,4 +147,7 @@ specific object state represented by that ETag. For the initial object,
 `--create-upload` accepts explicit input, bucket, key, and region arguments and
 uses typed `PutObjectCommand.IfNoneMatch = '*'`; it fails if the object already
 exists and can never overwrite it. `--upload` and `--create-upload` are
-mutually exclusive. Neither mode is run by this repository change.
+mutually exclusive. The initial `sorce-dashboard-data/auth/users.json` object
+was created on 2026-09-04 with `--create-upload`; its downloaded content matched
+the validated 30-user input, S3 reported server-side encryption, and an
+anonymous read returned HTTP 403.

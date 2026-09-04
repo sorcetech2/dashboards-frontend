@@ -3,7 +3,7 @@
 ## S3 and IAM boundaries
 
 Use the existing `sorce-dashboard-data` bucket. Bucket versioning is not a
-deployment requirement for this seven-user application. Keep the current public
+deployment requirement for this small application. Keep the current public
 read exception limited to `daily_summary/*`; none of these application roles
 should make `auth/*` public.
 
@@ -19,7 +19,9 @@ short-lived AWS credentials.
 1. Run the frozen install and every command in the README quality-check block.
 2. Prepare an encrypted, access-controlled backup of `auth/users.json` if it
    already exists, and record its ETag. Do not put the backup in this repository.
-3. Confirm the exact seven enabled usernames and that an enabled admin remains.
+3. Confirm all 30 migrated accounts are present and that an enabled admin
+   remains. Review account usage separately before disabling accounts that are
+   no longer needed.
 4. Deploy to the existing production project so the public URL does not change.
 5. Check `/api/health`; it returns only `ok` or `unavailable` and exposes no
    bucket, key, account, or customer information.

@@ -43,6 +43,8 @@ fixtures. It does not contact AWS.
   Browser input never selects an S3 key or tenant.
 - Dashboard payloads are validated at runtime. Missing, unavailable, and invalid
   objects produce different authenticated states.
+- Successful dashboard reads use a short, tenant-keyed server cache after each
+  request is authorized; `SORCE_DATA_CACHE_SECONDS` defaults to 60 seconds.
 - User changes use ETag conditional writes, and audit/rate-limit objects live
   under private `auth/*` prefixes.
 - The existing public bucket policy applies only to `daily_summary/*`.
@@ -54,12 +56,14 @@ documented conditional-write workflow.
 
 ## Operations
 
-- [User registry, seven-user migration, and recovery](docs/user-registry.md)
+- [User registry, legacy-user migration, and recovery](docs/user-registry.md)
 - [Deployment, IAM, health checks, and rollback](docs/operations.md)
 - The data producer remains the owner of `companies/*` and
   `companies/team_stats.json`; the frontend owns `auth/*`.
 
-The public application URL and login route remain unchanged. A production
-registry has not been uploaded by this change: confirm the exact seven usernames
-to retain, prepare the filtered registry, validate it, and then use the
-create-only upload command from the runbook.
+The public application URL and login route remain unchanged. The initial
+production registry at `sorce-dashboard-data/auth/users.json` contains all 30
+legacy accounts because the seven accounts still in use were not known. It was
+created with the runbook's create-only write and then verified for exact content,
+server-side encryption, and private access. Do not remove an account until its
+usage has been confirmed.

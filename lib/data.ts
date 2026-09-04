@@ -34,6 +34,7 @@ interface DashboardDataEnvironment {
   SORCE_DATA_LOCAL_ROOT?: string;
   SORCE_DATA_BUCKET?: string;
   SORCE_DATA_REGION?: string;
+  SORCE_DATA_CACHE_SECONDS?: string;
   AWS_DEFAULT_REGION?: string;
 }
 
@@ -56,6 +57,8 @@ interface DashboardDataServiceOptions {
   readObject: ObjectReader;
   resolvePrincipal: PrincipalResolver;
   teamStatsKey: string;
+  cacheTtlMs?: number;
+  now?: () => number;
 }
 
 /**
@@ -65,8 +68,34 @@ interface DashboardDataServiceOptions {
 export function createDashboardDataService({
   readObject,
   resolvePrincipal,
-  teamStatsKey
+  teamStatsKey,
+  cacheTtlMs = 0,
+  now = Date.now
 }: DashboardDataServiceOptions) {
+  const cache = new Map<
+    string,
+    { expiresAt: number; value: DataResult<SorceData | CompanyStats[]> }
+  >();
+
+  function readCache<T>(key: string): DataResult<T> | null {
+    if (cacheTtlMs <= 0) return null;
+    const entry = cache.get(key);
+    if (!entry) return null;
+    if (entry.expiresAt <= now()) {
+      cache.delete(key);
+      return null;
+    }
+    return entry.value as DataResult<T>;
+  }
+
+  function writeCache<T>(key: string, value: DataResult<T>): void {
+    if (cacheTtlMs <= 0 || value.status !== 'ok') return;
+    cache.set(key, {
+      expiresAt: now() + cacheTtlMs,
+      value: value as DataResult<SorceData | CompanyStats[]>
+    });
+  }
+
   return {
     async dashboard(principal: Principal): Promise<DataResult<SorceData>> {
       const access = await resolvePrincipal(principal);
@@ -75,14 +104,22 @@ export function createDashboardDataService({
         return { status: 'notConfigured' };
       }
 
+      // Authorization is deliberately resolved before this lookup. Tenant ID
+      // and the explicit object key prevent data crossing cache boundaries.
+      const cacheKey = `dashboard:${access.tenant.id}:${access.tenant.dashboardObjectKey}`;
+      const cached = readCache<SorceData>(cacheKey);
+      if (cached) return cached;
+
       const object = await readObject(access.tenant.dashboardObjectKey);
       if (object.status !== 'ok') return object;
 
       try {
-        return {
+        const result: DataResult<SorceData> = {
           status: 'ok',
           data: parseDashboardData(JSON.parse(object.body))
         };
+        writeCache(cacheKey, result);
+        return result;
       } catch {
         return { status: 'invalidPayload' };
       }
@@ -94,19 +131,38 @@ export function createDashboardDataService({
         return { status: 'forbidden' };
       }
 
+      const cacheKey = `team-stats:${access.tenant.id}:${teamStatsKey}`;
+      const cached = readCache<CompanyStats[]>(cacheKey);
+      if (cached) return cached;
+
       const object = await readObject(teamStatsKey);
       if (object.status !== 'ok') return object;
 
       try {
-        return {
+        const result: DataResult<CompanyStats[]> = {
           status: 'ok',
           data: parseTeamStats(JSON.parse(object.body))
         };
+        writeCache(cacheKey, result);
+        return result;
       } catch {
         return { status: 'invalidPayload' };
       }
     }
   };
+}
+
+function configuredCacheTtlMs(
+  environment: DashboardDataEnvironment
+): number | null {
+  const raw = environment.SORCE_DATA_CACHE_SECONDS?.trim();
+  if (!raw) return 60_000;
+  if (!/^\d+$/.test(raw)) return null;
+  const seconds = Number(raw);
+  if (!Number.isSafeInteger(seconds) || seconds < 0 || seconds > 900) {
+    return null;
+  }
+  return seconds * 1_000;
 }
 
 function isLocalAllowed(environment: DashboardDataEnvironment): boolean {
@@ -219,11 +275,16 @@ function isMissingObject(error: unknown): boolean {
 let defaultService: ReturnType<typeof createDashboardDataService> | undefined;
 
 function getDefaultService() {
+  const cacheTtlMs = configuredCacheTtlMs(process.env);
   defaultService ??= createDashboardDataService({
-    readObject: createObjectReader(),
+    readObject:
+      cacheTtlMs === null
+        ? () => Promise.resolve({ status: 'notConfigured' })
+        : createObjectReader(),
     resolvePrincipal: resolvePrincipalTenant,
     teamStatsKey:
-      process.env.SORCE_TEAM_STATS_KEY?.trim() || 'companies/team_stats.json'
+      process.env.SORCE_TEAM_STATS_KEY?.trim() || 'companies/team_stats.json',
+    cacheTtlMs: cacheTtlMs ?? 0
   });
   return defaultService;
 }
@@ -238,4 +299,18 @@ export async function retrieveTeamStats(
   principal: Principal
 ): Promise<DataResult<CompanyStats[]>> {
   return getDefaultService().teamStats(principal);
+}
+
+export function isDashboardDataStale(
+  data: SorceData,
+  now = Date.now(),
+  staleAfterHours = 48
+): boolean {
+  const sourceTimestamp = data.generatedAt ?? data.charts[0]?.today[0]?.date;
+  if (!sourceTimestamp) return false;
+  const sourceTime = Date.parse(sourceTimestamp);
+  return (
+    Number.isFinite(sourceTime) &&
+    now - sourceTime > staleAfterHours * 60 * 60 * 1_000
+  );
 }
