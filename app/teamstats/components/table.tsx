@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 
-import { ColumnDef } from '@tanstack/react-table';
+import type { Column, ColumnDef } from '@tanstack/react-table';
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -23,6 +23,7 @@ import {
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -55,14 +56,17 @@ export const columns: ColumnDef<Team>[] = [
   }
 ];
 
-function headerSortButton(column: any, name: string) {
+function headerSortButton(column: Column<Team, unknown>, name: string) {
+  const sortDirection = column.getIsSorted();
   return (
     <Button
+      type="button"
       variant="ghost"
       onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      aria-label={`${name}: ${sortDirection ? `sorted ${sortDirection}` : 'not sorted'}. Activate to change sorting.`}
     >
       {name}
-      <ArrowUpDown className="ml-2 h-4 w-4" />
+      <ArrowUpDown aria-hidden="true" className="ml-2 h-4 w-4" />
     </Button>
   );
 }
@@ -78,6 +82,9 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
+  // TanStack Table intentionally returns stateful callbacks; keep the table
+  // outside React Compiler memoization until the library exposes a compatible API.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -92,12 +99,26 @@ export function DataTable<TData, TValue>({
   return (
     <div className="rounded-md border">
       <Table>
+        <TableCaption className="sr-only">
+          Recording and active-member totals by team
+        </TableCaption>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    aria-sort={
+                      header.column.getCanSort()
+                        ? header.column.getIsSorted() === 'asc'
+                          ? 'ascending'
+                          : header.column.getIsSorted() === 'desc'
+                            ? 'descending'
+                            : 'none'
+                        : undefined
+                    }
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(

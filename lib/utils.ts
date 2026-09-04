@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { TeamStats, CompanyStats } from './sorce_data';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

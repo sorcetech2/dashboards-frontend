@@ -1,7 +1,6 @@
 'use client';
 
-import * as React from 'react';
-import { Chart } from '@/lib/sorce_data';
+import type { Chart } from '@/lib/sorce_data';
 import { HelpTooltip } from './top-card';
 import HexacoChart from './chart-hexaco';
 
@@ -27,7 +26,11 @@ export default function HexacoSection({ chartData }: HexacoSectionProps) {
     O: "Relates to the team's openness to new experiences and creative problem-solving, fostering innovation and adaptability."
   };
 
-  const identifiers = ['H', 'E', 'X', 'A', 'C', 'O'];
+  const hexacoData = chartData?.hexaco_chart ?? [];
+  const hasHexacoData = hexacoData.some(
+    (value) => typeof value === 'number' && Number.isFinite(value)
+  );
+
   return (
     <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-3">
       <div className="pt-3 ps-1 pb-2">
@@ -41,41 +44,32 @@ export default function HexacoSection({ chartData }: HexacoSectionProps) {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="items-center flex justify-center">
-            {/* {chartData?.hexaco_chart && HexacoChart(chartData.hexaco_chart)} */}
-            {chartData?.hexaco_chart && (
+            {hasHexacoData ? (
               <HexacoChart
-                hexacoData={chartData.hexaco_chart}
+                hexacoData={hexacoData}
                 dimensionNames={dimensionNames}
                 dimensionDescriptions={dimensionDescriptions}
               />
+            ) : (
+              <p className="p-6 text-center text-sm text-muted-foreground">
+                No personality data available
+              </p>
             )}
           </div>
           <div>
             <div className="mb-4">
-              {chartData?.archetype && <>
-                <h3 className="text-m font-semibold">Archetype: {chartData?.archetype}</h3>
-                <p className="text-sm text-gray-500">
-                  {chartData?.archetype}
-                </p>
-              </>}
+              {chartData?.archetype && (
+                <>
+                  <h3 className="text-lg font-semibold">
+                    Archetype: {chartData.archetype}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Summary of the team&apos;s observed personality profile.
+                  </p>
+                </>
+              )}
             </div>
           </div>
-          {/* <div className="hidden">
-            {identifiers.map((identifier) => (
-              <div key={identifier} className="mb-4">
-                <h3 className="text-m font-semibold">
-                  {dimensionNames[identifier as keyof typeof dimensionNames]}
-                </h3>
-                <p className="text-sm text-gray-500">
-                  {
-                    dimensionDescriptions[
-                      identifier as keyof typeof dimensionDescriptions
-                    ]
-                  }
-                </p>
-              </div>
-            ))}
-          </div> */}
         </div>
       </div>
     </div>

@@ -1,0 +1,20 @@
+{
+  "id": 103,
+  "name": "Quiet Team Co",
+  "charts": [
+    {
+      "id": "quiet",
+      "name": "Quiet",
+      "main": {
+        "name": "Energy",
+        "line": [],
+        "range": [],
+        "nulls": [],
+        "markers": [],
+        "rmps": []
+      },
+      "today": [],
+      "self_reported_over_time": []
+    }
+  ]
+}

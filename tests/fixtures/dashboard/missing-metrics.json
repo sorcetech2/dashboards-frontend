@@ -1,0 +1,31 @@
+{
+  "id": 104,
+  "name": "Partial Answers Co",
+  "charts": [
+    {
+      "id": "partial",
+      "name": "Partial",
+      "hexaco_chart": [null, 51, null],
+      "main": {
+        "line": [{ "x": 1788432000000, "y": null }]
+      },
+      "self_reported_over_time": [
+        {
+          "date": "2026-09-03",
+          "sleep_mean": null,
+          "activity_mean": 0,
+          "resilience_mean": null
+        }
+      ],
+      "today": [
+        {
+          "date": "2026-09-03T00:00:00Z",
+          "engagement_rate": null,
+          "hrv_this_week_average": null,
+          "sleep_mean": null,
+          "sleep_trend": null
+        }
+      ]
+    }
+  ]
+}

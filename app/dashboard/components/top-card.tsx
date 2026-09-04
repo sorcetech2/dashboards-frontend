@@ -1,7 +1,6 @@
-import {  ReactNode } from 'react';
-import * as React from 'react';
+import type { ReactNode } from 'react';
+import { CircleHelp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import {
   Tooltip,
   TooltipContent,
@@ -15,7 +14,7 @@ interface TopCardProps {
   children?: ReactNode;
 }
 
-const TopCard: React.FC<TopCardProps> = ({ title, help, children }) => {
+const TopCard = ({ title, help, children }: TopCardProps) => {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -24,19 +23,23 @@ const TopCard: React.FC<TopCardProps> = ({ title, help, children }) => {
           {help && <HelpTooltip>{help}</HelpTooltip>}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        {children}
-      </CardContent>
+      <CardContent>{children}</CardContent>
     </Card>
   );
 };
 
-const HelpTooltip: React.FC<{ children: ReactNode }> = ({ children }) => {
+const HelpTooltip = ({ children }: { children: ReactNode }) => {
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <QuestionMarkCircledIcon />
+          <button
+            type="button"
+            aria-label="More information"
+            className="inline-flex h-5 w-5 items-center justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <CircleHelp aria-hidden="true" />
+          </button>
         </TooltipTrigger>
         <TooltipContent className="bg-white p-2 rounded-md shadow-lg">
           <div className="text-sm text-black">{children}</div>
@@ -46,4 +49,4 @@ const HelpTooltip: React.FC<{ children: ReactNode }> = ({ children }) => {
   );
 };
 
-export {TopCard, HelpTooltip};
+export { TopCard, HelpTooltip };

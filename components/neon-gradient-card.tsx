@@ -1,9 +1,9 @@
 'use client';
 
 import {
-  CSSProperties,
-  ReactElement,
-  ReactNode,
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
   useEffect,
   useRef,
   useState
@@ -16,14 +16,8 @@ interface NeonColorsProps {
   secondColor: string;
 }
 
-interface NeonGradientCardProps {
-  /**
-   * @default <div />
-   * @type ReactElement
-   * @description
-   * The component to be rendered as the card
-   * */
-  as?: ReactElement;
+interface NeonGradientCardProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /**
    * @default ""
    * @type string
@@ -63,11 +57,9 @@ interface NeonGradientCardProps {
    * The colors of the neon gradient
    * */
   neonColors?: NeonColorsProps;
-
-  [key: string]: any;
 }
 
-const NeonGradientCard: React.FC<NeonGradientCardProps> = ({
+const NeonGradientCard = ({
   className,
   children,
   borderSize = 2,
@@ -77,32 +69,24 @@ const NeonGradientCard: React.FC<NeonGradientCardProps> = ({
     secondColor: '#00FFF1'
   },
   ...props
-}) => {
+}: NeonGradientCardProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
     const updateDimensions = () => {
-      if (containerRef.current) {
-        const { offsetWidth, offsetHeight } = containerRef.current;
-        setDimensions({ width: offsetWidth, height: offsetHeight });
-      }
+      const { offsetWidth, offsetHeight } = element;
+      setDimensions({ width: offsetWidth, height: offsetHeight });
     };
 
     updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-
-    return () => {
-      window.removeEventListener('resize', updateDimensions);
-    };
+    const observer = new ResizeObserver(updateDimensions);
+    observer.observe(element);
+    return () => observer.disconnect();
   }, []);
-
-  useEffect(() => {
-    if (containerRef.current) {
-      const { offsetWidth, offsetHeight } = containerRef.current;
-      setDimensions({ width: offsetWidth, height: offsetHeight });
-    }
-  }, [children]);
 
   return (
     <div
@@ -133,11 +117,11 @@ const NeonGradientCard: React.FC<NeonGradientCardProps> = ({
           'relative size-full min-h-[inherit] rounded-[var(--card-content-radius)] bg-gray-100 p-6',
           'before:absolute before:-left-[var(--border-size)] before:-top-[var(--border-size)] before:-z-10 before:block',
           "before:h-[var(--pseudo-element-height)] before:w-[var(--pseudo-element-width)] before:rounded-[var(--border-radius)] before:content-['']",
-          'before:bg-[linear-gradient(0deg,var(--neon-first-color),var(--neon-second-color))] before:bg-[length:100%_200%]',
+          'before:bg-[linear-gradient(0deg,var(--neon-first-color),var(--neon-second-color))] before:bg-[length:100%_200%] motion-reduce:before:animate-none',
           'before:animate-background-position-spin',
           'after:absolute after:-left-[var(--border-size)] after:-top-[var(--border-size)] after:-z-10 after:block',
           "after:h-[var(--pseudo-element-height)] after:w-[var(--pseudo-element-width)] after:rounded-[var(--border-radius)] after:blur-[var(--after-blur)] after:content-['']",
-          'after:bg-[linear-gradient(0deg,var(--neon-first-color),var(--neon-second-color))] after:bg-[length:100%_200%] after:opacity-80',
+          'after:bg-[linear-gradient(0deg,var(--neon-first-color),var(--neon-second-color))] after:bg-[length:100%_200%] after:opacity-80 motion-reduce:after:animate-none',
           'after:animate-background-position-spin',
           'dark:bg-neutral-900'
         )}

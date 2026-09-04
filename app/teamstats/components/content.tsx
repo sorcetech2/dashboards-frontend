@@ -3,45 +3,47 @@
 import { CompanyStats, TeamStats } from '@/lib/sorce_data';
 import { useSearchParams } from 'next/navigation';
 import { Sidebar } from './sidebar';
-import { Team, columns } from './table';
+import { columns } from './table';
 import { DataTable } from './table';
 import RecordingsScatterPlot from './chart-time';
-import { TopCard, HelpTooltip } from '../../dashboard/components/top-card';
+import { TopCard } from '../../dashboard/components/top-card';
 
 export function CompaniesContent({ content }: { content: CompanyStats[] }) {
   const searchParams = useSearchParams();
   const selectedCompany = searchParams.get('company');
 
-  const company = content.find((c) => c.company_name == selectedCompany);
-  var stats: TeamStats[] = [];
-  company?.stats.forEach((stat) => {
-    stats.push(stat);
-  });
+  const company = content.find((item) => item.company_name === selectedCompany);
+  const stats: TeamStats[] = company?.stats ?? [];
 
   return (
-    <main className="flex flex-1 overflow-hidden">
-      <div className="w-[250px] p-4 h-full">
+    <main
+      id="main-content"
+      className="flex flex-1 flex-col md:flex-row md:overflow-hidden"
+    >
+      <div className="h-full w-full p-4 md:w-[250px] md:shrink-0">
         <Sidebar companyStats={content} selectedCompany={selectedCompany} />
       </div>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
+      <div className="min-w-0 flex-1 space-y-4 p-4 pt-2 md:p-8 md:pt-6">
+        <div className="flex items-center justify-between">
           {company && selectedCompany ? (
-            <h2 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-3xl font-bold tracking-tight">
               {selectedCompany}
-            </h2>
+            </h1>
           ) : (
-            <p className="text-muted-foreground p-4">
+            <h1 className="p-4 text-xl font-semibold text-muted-foreground">
               Select a company to view details
-            </p>
+            </h1>
           )}
         </div>
         {company && <TeamsContent company={company} />}
-        <TopCard
-          title="Recordings over days (last 10 days)"
-          help="All recordings from the past 10 days distributed by day / time"
-        >
-          {company && <RecordingsScatterPlot data={stats} />}
-        </TopCard>
+        {company && (
+          <TopCard
+            title="Recordings over the last 10 days"
+            help="All recordings from the latest 10-day period, distributed by date and time."
+          >
+            <RecordingsScatterPlot data={stats} />
+          </TopCard>
+        )}
       </div>
     </main>
   );
