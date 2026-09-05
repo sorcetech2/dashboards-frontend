@@ -2,6 +2,7 @@ import 'server-only';
 
 import crypto from 'node:crypto';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { sourceFromEnvironment, type UserStoreEnvironment } from './store';
 
 export type AuditAction =
   | 'user.created'
@@ -30,11 +31,18 @@ export class AuditWriteError extends Error {
   }
 }
 
-interface AuditEnvironment {
-  [key: string]: string | undefined;
-  AUTH_USER_REGISTRY_BUCKET?: string;
-  AUTH_USER_REGISTRY_REGION?: string;
-  AWS_DEFAULT_REGION?: string;
+/** A local registry has no durable audit target; events are dropped. */
+class NoopAuditWriter implements AuditWriter {
+  write(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+/** Previews without an explicit bucket must never write into production. */
+class FailClosedAuditWriter implements AuditWriter {
+  write(): Promise<void> {
+    return Promise.reject(new AuditWriteError());
+  }
 }
 
 export interface S3AuditWriterOptions {
@@ -86,10 +94,18 @@ export function createS3AuditWriter(
 }
 
 export function getAuditWriter(
-  environment: AuditEnvironment = process.env
+  environment: UserStoreEnvironment = process.env
 ): AuditWriter {
-  const bucket =
-    environment.AUTH_USER_REGISTRY_BUCKET?.trim() || 'sorce-dashboard-data';
+  // Mirror the registry's source selection so audit events follow the same
+  // store the mutation was applied to.
+  if (sourceFromEnvironment(environment) === 'local') {
+    return new NoopAuditWriter();
+  }
+  const configuredBucket = environment.AUTH_USER_REGISTRY_BUCKET?.trim();
+  if (environment.VERCEL_ENV === 'preview' && !configuredBucket) {
+    return new FailClosedAuditWriter();
+  }
+  const bucket = configuredBucket || 'sorce-dashboard-data';
   const region =
     environment.AUTH_USER_REGISTRY_REGION?.trim() ||
     environment.AWS_DEFAULT_REGION?.trim() ||

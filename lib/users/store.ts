@@ -78,7 +78,7 @@ export interface UserStoreOptions {
   environment?: UserStoreEnvironment;
 }
 
-function sourceFromEnvironment(
+export function sourceFromEnvironment(
   environment: UserStoreEnvironment
 ): UserRegistrySource {
   const requested = environment.AUTH_USER_REGISTRY_SOURCE?.trim().toLowerCase();
@@ -319,42 +319,29 @@ export class UserStore {
   }
 
   /**
-   * Apply one mutation against a fresh snapshot and write it conditionally.
-   * Callers must provide the ETag they read; no unconditional write path is
-   * exposed.  The mutation receives a mutable draft but the result is parsed
+   * Load the registry once and apply one mutation with a conditional write
+   * against the ETag that was just read; no unconditional write path is
+   * exposed. The mutation receives a mutable draft but the result is parsed
    * again, so all schema and cross-record invariants are enforced on writes.
+   * A concurrent write is retried a bounded number of times against a fresh
+   * snapshot before surfacing as a UserStoreConflictError.
    */
-  async mutate(
-    expectedETag: string,
+  async update(
     mutation: (draft: UserRegistry) => UserRegistry
   ): Promise<UserRegistrySnapshot> {
-    if (!expectedETag.trim()) {
-      throw new UserStoreConflictError('A current registry ETag is required');
+    for (let attempt = 0; ; attempt += 1) {
+      const current = await this.load();
+      const next = parseUserRegistry(
+        mutation(structuredClone(current.registry))
+      );
+      try {
+        return await this.writeValidated(next, current.etag);
+      } catch (error) {
+        if (!(error instanceof UserStoreConflictError) || attempt >= 2) {
+          throw error;
+        }
+      }
     }
-
-    const current = await this.load();
-    if (current.etag !== expectedETag) {
-      throw new UserStoreConflictError();
-    }
-
-    const next = parseUserRegistry(mutation(structuredClone(current.registry)));
-
-    return this.writeValidated(next, expectedETag);
-  }
-
-  /** Replace a prepared, validated registry using the same conditional path. */
-  async replace(
-    expectedETag: string,
-    registry: UserRegistry
-  ): Promise<UserRegistrySnapshot> {
-    if (!expectedETag.trim()) {
-      throw new UserStoreConflictError('A current registry ETag is required');
-    }
-    const current = await this.load();
-    if (current.etag !== expectedETag) {
-      throw new UserStoreConflictError();
-    }
-    return this.writeValidated(parseUserRegistry(registry), expectedETag);
   }
 
   private async writeValidated(

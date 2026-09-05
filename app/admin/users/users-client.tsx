@@ -88,6 +88,14 @@ function useAdminAction() {
         setGeneratedPassword(nextResult.generatedPassword);
       }
       if (nextResult.ok || nextResult.partialSuccess) router.refresh();
+    } catch {
+      // A failed or interrupted call must still tell the admin something
+      // happened; the change may or may not have been applied.
+      setResult({
+        ok: false,
+        message:
+          'The request failed. Refresh and check the user list before retrying.'
+      });
     } finally {
       setIsPending(false);
     }

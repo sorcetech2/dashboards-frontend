@@ -18,6 +18,7 @@ import {
   UserMutationError
 } from '@/lib/users/mutations';
 import { hashPassword } from '@/lib/users/passwords';
+import type { UserRegistry } from '@/lib/users/schema';
 import {
   UserStoreConflictError,
   UserStoreError,
@@ -109,63 +110,28 @@ async function audit(
   });
 }
 
-export async function createUser(
-  formData: FormData
-): Promise<AdminActionResult> {
-  const suppliedActor = await requireAdmin();
-  const actor = await resolvePrincipal(suppliedActor);
-  if (!actor || actor.principal.role !== 'admin') {
-    return { ok: false, message: 'Administrator authorization is required.' };
-  }
-
-  const parsed = z
-    .object({
-      username: Username,
-      displayName: DisplayName,
-      role: Role,
-      tenantId: Identifier
-    })
-    .safeParse({
-      username: formString(formData, 'username'),
-      displayName: formString(formData, 'displayName'),
-      role: formString(formData, 'role'),
-      tenantId: formString(formData, 'tenantId')
-    });
-  if (!parsed.success)
-    return { ok: false, message: 'Check the user details and try again.' };
-
-  const password = generatedPassword();
-  const userId = crypto.randomUUID();
-  try {
-    const store = getUserStore();
-    const current = await store.load();
-    await store.mutate(current.etag, (registry) =>
-      createUserMutation(registry, {
-        ...parsed.data,
-        id: userId,
-        password: hashPassword(password),
-        now: new Date().toISOString()
-      })
-    );
-  } catch (error) {
-    return { ok: false, message: messageFor(error) };
-  }
-  try {
-    await audit(actor.principal.id, 'user.created', userId);
-  } catch (error) {
-    if (error instanceof AuditWriteError) return auditFailure(password);
-    return { ok: false, message: messageFor(error) };
-  }
-  return {
-    ok: true,
-    message:
-      'User created. Copy the generated password now; it will not be shown again.',
-    generatedPassword: password
-  };
+interface AdminMutation<T> {
+  /** Form keys to read; each is validated by `schema`. */
+  fields: string[];
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>;
+  invalidMessage: string;
+  mutate: (registry: UserRegistry, data: T) => UserRegistry;
+  auditAction: (data: T) => AuditAction;
+  targetId: (data: T) => string;
+  successMessage: (data: T) => string;
+  /** Returned to the admin on success or partial success only. */
+  generatedPassword?: string;
 }
 
-export async function setEnabled(
-  formData: FormData
+/**
+ * The single admin write path: authorize the actor against the registry,
+ * validate the form, apply the mutation with one conditional registry write,
+ * then record the audit event. A mutation that applied but could not be
+ * audited is reported as a partial success so the admin does not retry it.
+ */
+async function runAdminMutation<T>(
+  formData: FormData,
+  mutation: AdminMutation<T>
 ): Promise<AdminActionResult> {
   const suppliedActor = await requireAdmin();
   const actor = await resolvePrincipal(suppliedActor);
@@ -173,121 +139,124 @@ export async function setEnabled(
     return { ok: false, message: 'Administrator authorization is required.' };
   }
 
-  const parsed = z
-    .object({ userId: Identifier, enabled: z.enum(['true', 'false']) })
-    .safeParse({
-      userId: formString(formData, 'userId'),
-      enabled: formString(formData, 'enabled')
-    });
-  if (!parsed.success)
-    return { ok: false, message: 'Check the user change and try again.' };
+  const parsed = mutation.schema.safeParse(
+    Object.fromEntries(
+      mutation.fields.map((key) => [key, formString(formData, key)])
+    )
+  );
+  if (!parsed.success) return { ok: false, message: mutation.invalidMessage };
+  const data = parsed.data;
+  const password = mutation.generatedPassword;
 
-  const enabled = parsed.data.enabled === 'true';
   try {
-    const store = getUserStore();
-    const current = await store.load();
-    await store.mutate(current.etag, (registry) =>
-      setUserEnabled(registry, {
-        userId: parsed.data.userId,
-        enabled,
-        now: new Date().toISOString()
-      })
-    );
+    await getUserStore().update((registry) => mutation.mutate(registry, data));
   } catch (error) {
     return { ok: false, message: messageFor(error) };
   }
   try {
     await audit(
       actor.principal.id,
-      enabled ? 'user.enabled' : 'user.disabled',
-      parsed.data.userId
+      mutation.auditAction(data),
+      mutation.targetId(data)
     );
-  } catch (error) {
-    if (error instanceof AuditWriteError) return auditFailure();
-    return { ok: false, message: messageFor(error) };
-  }
-  return { ok: true, message: enabled ? 'User enabled.' : 'User disabled.' };
-}
-
-export async function changeAccess(
-  formData: FormData
-): Promise<AdminActionResult> {
-  const suppliedActor = await requireAdmin();
-  const actor = await resolvePrincipal(suppliedActor);
-  if (!actor || actor.principal.role !== 'admin') {
-    return { ok: false, message: 'Administrator authorization is required.' };
-  }
-
-  const parsed = z
-    .object({ userId: Identifier, role: Role, tenantId: Identifier })
-    .safeParse({
-      userId: formString(formData, 'userId'),
-      role: formString(formData, 'role'),
-      tenantId: formString(formData, 'tenantId')
-    });
-  if (!parsed.success)
-    return { ok: false, message: 'Check the access change and try again.' };
-
-  try {
-    const store = getUserStore();
-    const current = await store.load();
-    await store.mutate(current.etag, (registry) =>
-      updateUserAccess(registry, {
-        ...parsed.data,
-        now: new Date().toISOString()
-      })
-    );
-  } catch (error) {
-    return { ok: false, message: messageFor(error) };
-  }
-  try {
-    await audit(actor.principal.id, 'user.access_changed', parsed.data.userId);
-  } catch (error) {
-    if (error instanceof AuditWriteError) return auditFailure();
-    return { ok: false, message: messageFor(error) };
-  }
-  return { ok: true, message: 'User access updated.' };
-}
-
-export async function resetPassword(
-  formData: FormData
-): Promise<AdminActionResult> {
-  const suppliedActor = await requireAdmin();
-  const actor = await resolvePrincipal(suppliedActor);
-  if (!actor || actor.principal.role !== 'admin') {
-    return { ok: false, message: 'Administrator authorization is required.' };
-  }
-
-  const parsed = z
-    .object({ userId: Identifier })
-    .safeParse({ userId: formString(formData, 'userId') });
-  if (!parsed.success)
-    return { ok: false, message: 'Check the password reset and try again.' };
-
-  const password = generatedPassword();
-  try {
-    const store = getUserStore();
-    const current = await store.load();
-    await store.mutate(current.etag, (registry) =>
-      resetUserPassword(registry, {
-        userId: parsed.data.userId,
-        password: hashPassword(password),
-        now: new Date().toISOString()
-      })
-    );
-  } catch (error) {
-    return { ok: false, message: messageFor(error) };
-  }
-  try {
-    await audit(actor.principal.id, 'user.password_reset', parsed.data.userId);
   } catch (error) {
     if (error instanceof AuditWriteError) return auditFailure(password);
     return { ok: false, message: messageFor(error) };
   }
   return {
     ok: true,
-    message:
+    message: mutation.successMessage(data),
+    ...(password ? { generatedPassword: password } : {})
+  };
+}
+
+export async function createUser(
+  formData: FormData
+): Promise<AdminActionResult> {
+  const password = generatedPassword();
+  const hashedPassword = hashPassword(password);
+  const userId = crypto.randomUUID();
+  return runAdminMutation(formData, {
+    fields: ['username', 'displayName', 'role', 'tenantId'],
+    schema: z.object({
+      username: Username,
+      displayName: DisplayName,
+      role: Role,
+      tenantId: Identifier
+    }),
+    invalidMessage: 'Check the user details and try again.',
+    mutate: (registry, data) =>
+      createUserMutation(registry, {
+        ...data,
+        id: userId,
+        password: hashedPassword,
+        now: new Date().toISOString()
+      }),
+    auditAction: () => 'user.created',
+    targetId: () => userId,
+    successMessage: () =>
+      'User created. Copy the generated password now; it will not be shown again.',
+    generatedPassword: password
+  });
+}
+
+export async function setEnabled(
+  formData: FormData
+): Promise<AdminActionResult> {
+  return runAdminMutation(formData, {
+    fields: ['userId', 'enabled'],
+    schema: z.object({
+      userId: Identifier,
+      enabled: z.enum(['true', 'false']).transform((value) => value === 'true')
+    }),
+    invalidMessage: 'Check the user change and try again.',
+    mutate: (registry, data) =>
+      setUserEnabled(registry, {
+        userId: data.userId,
+        enabled: data.enabled,
+        now: new Date().toISOString()
+      }),
+    auditAction: (data) => (data.enabled ? 'user.enabled' : 'user.disabled'),
+    targetId: (data) => data.userId,
+    successMessage: (data) =>
+      data.enabled ? 'User enabled.' : 'User disabled.'
+  });
+}
+
+export async function changeAccess(
+  formData: FormData
+): Promise<AdminActionResult> {
+  return runAdminMutation(formData, {
+    fields: ['userId', 'role', 'tenantId'],
+    schema: z.object({ userId: Identifier, role: Role, tenantId: Identifier }),
+    invalidMessage: 'Check the access change and try again.',
+    mutate: (registry, data) =>
+      updateUserAccess(registry, { ...data, now: new Date().toISOString() }),
+    auditAction: () => 'user.access_changed',
+    targetId: (data) => data.userId,
+    successMessage: () => 'User access updated.'
+  });
+}
+
+export async function resetPassword(
+  formData: FormData
+): Promise<AdminActionResult> {
+  const password = generatedPassword();
+  const hashedPassword = hashPassword(password);
+  return runAdminMutation(formData, {
+    fields: ['userId'],
+    schema: z.object({ userId: Identifier }),
+    invalidMessage: 'Check the password reset and try again.',
+    mutate: (registry, data) =>
+      resetUserPassword(registry, {
+        userId: data.userId,
+        password: hashedPassword,
+        now: new Date().toISOString()
+      }),
+    auditAction: () => 'user.password_reset',
+    targetId: (data) => data.userId,
+    successMessage: () =>
       'Password reset. Copy the generated password now; it will not be shown again.',
     generatedPassword: password
-  };
+  });
 }

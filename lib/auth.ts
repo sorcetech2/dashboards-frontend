@@ -93,7 +93,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!hasCurrentSessionClaims(token)) {
           return rejectSessionToken(token);
         }
-        const current = await getUserAuthStateById(token.id);
+        let current;
+        try {
+          current = await getUserAuthStateById(token.id);
+        } catch {
+          // The registry is unreachable, not the user revoked. Keep the token
+          // so a transient outage does not delete the cookie; data handlers
+          // still resolve the principal against the registry before serving.
+          return token;
+        }
         if (!matchesAuthoritativeAuthState(token, current)) {
           return rejectSessionToken(token);
         }

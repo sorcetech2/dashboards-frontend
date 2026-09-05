@@ -80,11 +80,11 @@ describe('login throttle scope and policy', () => {
     ).not.toBe(first);
   });
 
-  it('prefers the first forwarded address and has a safe fallback', () => {
+  it('uses the proxy-appended forwarded address and has a safe fallback', () => {
     const forwarded = new Request('https://example.test', {
       headers: { 'x-forwarded-for': '203.0.113.8, 10.0.0.2' }
     });
-    expect(requestClientIp(forwarded)).toBe('203.0.113.8');
+    expect(requestClientIp(forwarded)).toBe('10.0.0.2');
 
     const realIp = new Request('https://example.test', {
       headers: { 'x-real-ip': '203.0.113.9' }
@@ -218,6 +218,46 @@ describe('login throttle scope and policy', () => {
     await expect(throttle.beforeAttempt('alice', '203.0.113.11')).resolves.toBe(
       false
     );
+    // The unreadable object is replaced with a fresh single-failure state so
+    // the pair is not locked out until the lifecycle rule deletes it.
+    expect(stateFor(backend, key)).toMatchObject({
+      failureCount: 1,
+      blockedUntil: 20_000 + LOGIN_THROTTLE_BASE_DELAY_MS
+    });
+  });
+
+  it('locks a pair out for the maximum delay once the failure limit is reached', async () => {
+    let now = 30_000;
+    const backend = new FakeObjectBackend();
+    const key = loginThrottleObjectKey('test-secret', 'alice', '203.0.113.13');
+    const throttle = createLoginThrottle({
+      backend,
+      secret: 'test-secret',
+      now: () => now
+    });
+
+    for (let index = 1; index <= LOGIN_THROTTLE_MAX_FAILURES; index += 1) {
+      expect(await throttle.beforeAttempt('alice', '203.0.113.13')).toBe(true);
+      await throttle.recordFailure('alice', '203.0.113.13');
+      const state = stateFor(backend, key);
+      expect(state.failureCount).toBe(index);
+      if (index < LOGIN_THROTTLE_MAX_FAILURES) now = state.blockedUntil;
+    }
+    const lockedOut = stateFor(backend, key);
+    expect(lockedOut).toMatchObject({
+      failureCount: LOGIN_THROTTLE_MAX_FAILURES,
+      blockedUntil: now + LOGIN_THROTTLE_MAX_DELAY_MS
+    });
+
+    // The window does not reset underneath an active lockout, even once the
+    // original 15-minute window has elapsed.
+    now += LOGIN_THROTTLE_WINDOW_MS - 1;
+    expect(await throttle.beforeAttempt('alice', '203.0.113.13')).toBe(false);
+    await throttle.recordFailure('alice', '203.0.113.13');
+    expect(stateFor(backend, key)).toMatchObject({
+      failureCount: LOGIN_THROTTLE_MAX_FAILURES,
+      windowStartedAt: lockedOut.windowStartedAt
+    });
   });
 
   it('is a deterministic no-op in development/test and fails closed without a secret in production', async () => {

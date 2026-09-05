@@ -121,17 +121,17 @@ export async function findUserById(
   }
 }
 
-/** Authoritative state used by protected operations for authVersion checks. */
+/**
+ * Authoritative state used by protected operations for authVersion checks.
+ * Registry read failures propagate so callers can tell an outage apart from a
+ * user that no longer exists; only the latter is a revocation.
+ */
 export async function getUserAuthStateById(
   id: string | undefined | null
 ): Promise<PrincipalAuthState | null> {
   if (typeof id !== 'string' || id.length === 0) return null;
-  try {
-    const user = await getUserStore().findUserById(id);
-    return user ? toAuthState(user) : null;
-  } catch {
-    return null;
-  }
+  const user = await getUserStore().findUserById(id);
+  return user ? toAuthState(user) : null;
 }
 
 /**

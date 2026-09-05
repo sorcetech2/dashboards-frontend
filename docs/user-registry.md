@@ -133,8 +133,9 @@ this prefix.
 
 ## Conditional writes
 
-`UserStore.mutate()` and `UserStore.replace()` require a fresh ETag and pass it
-through the backend as `If-Match`. A stale ETag returns a conflict, and local
+`UserStore.update()` reads the registry once and passes that snapshot's ETag
+through the backend as `If-Match`. A stale ETag returns a conflict, which is
+retried a bounded number of times against a fresh snapshot, and local
 development writes use the same compare-before-atomic-rename semantics.
 
 The S3 backend uses the typed `PutObjectCommand.IfMatch` field from the pinned

@@ -18,23 +18,30 @@ async function walk(directory) {
 }
 
 async function loadSensitiveCandidates() {
+  // Scan for the salts and hashes of every registry the build could have
+  // traced: the developer's local file and, on a clean CI checkout, the E2E
+  // fixture. Usernames are excluded because short words such as "admin"
+  // legitimately appear in client bundles.
+  const registryPaths = [
+    process.env.AUTH_USER_REGISTRY_LOCAL_PATH,
+    path.join(projectRoot, 'lib', 'user-registry.json'),
+    path.join(projectRoot, 'tests', 'fixtures', 'e2e-user-registry.json')
+  ].filter(Boolean);
   const candidates = [];
-  const registryPath = path.join(projectRoot, 'lib', 'user-registry.json');
-  try {
-    const registry = JSON.parse(await readFile(registryPath, 'utf8'));
+  for (const registryPath of registryPaths) {
+    let registry;
+    try {
+      registry = JSON.parse(await readFile(registryPath, 'utf8'));
+    } catch {
+      continue;
+    }
     for (const user of registry.users ?? []) {
-      for (const value of [
-        user.username,
-        user.password?.salt,
-        user.password?.hash
-      ]) {
-        if (typeof value === 'string' && value.length >= 4) {
+      for (const value of [user.password?.salt, user.password?.hash]) {
+        if (typeof value === 'string' && value.length >= 16) {
           candidates.push(value);
         }
       }
     }
-  } catch {
-    // A clean clone deliberately has no local registry.
   }
   return candidates;
 }
@@ -70,6 +77,12 @@ const bundleFiles = files.filter((filename) => {
   );
 });
 const candidates = await loadSensitiveCandidates();
+if (candidates.length === 0) {
+  console.error(
+    'No registry credential values were available; the bundle scan cannot run.'
+  );
+  process.exitCode = 1;
+}
 for (const filename of bundleFiles) {
   const contents = await readFile(filename, 'utf8');
   if (candidates.some((candidate) => contents.includes(candidate))) {

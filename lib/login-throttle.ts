@@ -122,11 +122,15 @@ export function loginThrottleObjectKey(
   return `${keyPrefix}${digest}.json`;
 }
 
-/** Extract only a bounded first-hop address from the platform proxy headers. */
+/**
+ * Extract only a bounded client address from the proxy headers. The rightmost
+ * X-Forwarded-For entry was appended by the nearest trusted proxy; the leftmost
+ * is whatever the client sent and must not be able to partition the throttle.
+ */
 export function requestClientIp(request: Pick<Request, 'headers'>): string {
   const forwarded = request.headers.get('x-forwarded-for');
-  const firstForwarded = forwarded?.split(',')[0]?.trim();
-  if (firstForwarded && firstForwarded.length <= 256) return firstForwarded;
+  const lastForwarded = forwarded?.split(',').at(-1)?.trim();
+  if (lastForwarded && lastForwarded.length <= 256) return lastForwarded;
 
   const realIp = request.headers.get('x-real-ip')?.trim();
   if (realIp && realIp.length <= 256) return realIp;
@@ -171,18 +175,35 @@ function parseState(body: string): LoginThrottleState {
   };
 }
 
+function tryParseState(body: string): LoginThrottleState | undefined {
+  try {
+    return parseState(body);
+  } catch {
+    return undefined;
+  }
+}
+
 function nextFailureState(now: number, current?: LoginThrottleState) {
+  // A pair stays in its window while it is blocked, so an active lockout is
+  // never shortened by the window expiring underneath it.
   const inWindow = Boolean(
-    current && now - current.windowStartedAt < LOGIN_THROTTLE_WINDOW_MS
+    current &&
+      (now - current.windowStartedAt < LOGIN_THROTTLE_WINDOW_MS ||
+        now < current.blockedUntil)
   );
   const failureCount = inWindow
     ? Math.min(current!.failureCount + 1, LOGIN_THROTTLE_MAX_FAILURES)
     : 1;
   const windowStartedAt = inWindow ? current!.windowStartedAt : now;
-  const delay = Math.min(
-    LOGIN_THROTTLE_BASE_DELAY_MS * 2 ** (failureCount - 1),
-    LOGIN_THROTTLE_MAX_DELAY_MS
-  );
+  // Below the failure limit the delay escalates exponentially; reaching the
+  // limit locks the pair out for the full maximum delay.
+  const delay =
+    failureCount >= LOGIN_THROTTLE_MAX_FAILURES
+      ? LOGIN_THROTTLE_MAX_DELAY_MS
+      : Math.min(
+          LOGIN_THROTTLE_BASE_DELAY_MS * 2 ** (failureCount - 1),
+          LOGIN_THROTTLE_MAX_DELAY_MS
+        );
   return {
     schemaVersion: LOGIN_THROTTLE_SCHEMA_VERSION,
     windowStartedAt,
@@ -219,7 +240,12 @@ function statusCode(error: unknown): number | undefined {
 }
 
 function isNotFound(error: unknown): boolean {
-  if (statusCode(error) === 404) return true;
+  // Without s3:ListBucket (which the documented IAM grant deliberately omits)
+  // S3 answers GetObject on a missing key with 403 rather than 404. Treating
+  // it as "no state yet" is safe: a genuinely denied role still fails closed
+  // because the conditional PutObject that follows is rejected.
+  const status = statusCode(error);
+  if (status === 404 || status === 403) return true;
   if (typeof error !== 'object' || error === null || !('name' in error)) {
     return false;
   }
@@ -337,16 +363,31 @@ class DurableLoginThrottle implements LoginThrottle {
   }
 
   async beforeAttempt(account: unknown, ip: unknown): Promise<boolean> {
+    let object: { body: string; etag: string } | null;
     try {
-      const object = await this.backend.read(this.key(account, ip));
-      if (!object) return true;
-      const state = parseState(object.body);
-      return state.blockedUntil <= this.now();
+      object = await this.backend.read(this.key(account, ip));
     } catch {
-      // A throttle read/parse failure must never turn into an authentication
+      // A throttle read failure must never turn into an authentication
       // allow. The caller receives only the generic false decision.
       return false;
     }
+    if (!object) return true;
+
+    const state = tryParseState(object.body);
+    if (!state) {
+      // An unreadable object (corruption, schema bump) must not lock the pair
+      // out until the lifecycle rule deletes it. Replace it with a fresh
+      // single-failure state, deny this attempt, and let the next one proceed.
+      try {
+        await this.mutate(account, ip, (_current, now) =>
+          nextFailureState(now, undefined)
+        );
+      } catch {
+        // Still fail closed; the next attempt retries the repair.
+      }
+      return false;
+    }
+    return state.blockedUntil <= this.now();
   }
 
   async recordFailure(account: unknown, ip: unknown): Promise<void> {
@@ -376,7 +417,9 @@ class DurableLoginThrottle implements LoginThrottle {
     ) {
       const object = await this.backend.read(key);
       if (!object && !createIfMissing) return;
-      const current = object ? parseState(object.body) : undefined;
+      // An unparseable object is treated as no state so the conditional write
+      // below overwrites it instead of leaving it in place forever.
+      const current = object ? tryParseState(object.body) : undefined;
       const next = transition(current, this.now());
       try {
         if (object) {

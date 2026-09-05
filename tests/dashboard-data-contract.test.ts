@@ -107,6 +107,26 @@ describe('dashboard data contract', () => {
     expect(result.error.message).not.toContain('not-a-timestamp');
   });
 
+  it('rejects RMP date markers that are not valid timestamps', () => {
+    const payload = {
+      ...emptyTodayLine,
+      charts: [
+        {
+          ...emptyTodayLine.charts[0],
+          main: {
+            ...emptyTodayLine.charts[0]?.main,
+            rmps: [{ x: 'date#2026-13-45', rmp: 'push' }]
+          }
+        }
+      ]
+    };
+    const result = safeParseDashboardData(payload);
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.category).toBe('invalid_chart');
+  });
+
   it('rejects non-finite chart values at the wire boundary', () => {
     const payload = {
       ...emptyTodayLine,

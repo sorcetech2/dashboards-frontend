@@ -149,9 +149,17 @@ const rmpSchema = z
         .refine((value) => value.startsWith('date#'), {
           message: 'invalid RMP timestamp'
         })
-        .transform((value) => {
+        .transform((value, context) => {
           const normalized = canonicalTimestamp(value.slice(5));
-          return normalized === null ? z.NEVER : Date.parse(normalized);
+          if (normalized === null) {
+            // z.NEVER alone is not a rejection; the issue makes it one.
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'invalid RMP timestamp'
+            });
+            return z.NEVER;
+          }
+          return Date.parse(normalized);
         })
     ]),
     rmp: z.string()
