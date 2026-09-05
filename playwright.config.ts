@@ -11,8 +11,11 @@ export default defineConfig({
     ['list'],
     ['html', { outputFolder: 'output/playwright/report', open: 'never' }]
   ],
-  timeout: 60_000,
-  expect: { timeout: 8_000 },
+  // A cold `next dev` compiles each route on its first request, and a single
+  // test walks several routes. CI runners are slow enough that the local
+  // budgets are not survivable there.
+  timeout: process.env.CI ? 180_000 : 60_000,
+  expect: { timeout: process.env.CI ? 15_000 : 8_000 },
   use: {
     baseURL,
     trace: 'retain-on-failure',
