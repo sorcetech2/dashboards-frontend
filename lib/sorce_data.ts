@@ -5,10 +5,23 @@ type ChartState = {
   fullDataChart: SorceData | null;
   didFullData: boolean;
   selectedChart: string;
-  energyChart: any | null;
+  energyChart: unknown;
 };
 
+/**
+ * Timestamp as it crosses the JSON boundary.
+ *
+ * Runtime payloads contain ISO strings, not `Date` instances. Consumers that
+ * need date arithmetic can construct a `Date` from this value after the
+ * contract has validated it.
+ */
+type JsonTimestamp = string;
+
 interface SorceData {
+  schemaVersion?: number;
+  generatedAt?: JsonTimestamp;
+  tenantId?: string;
+  dataQualityWarnings?: string[];
   id: number;
   name: string;
   logo: string;
@@ -19,7 +32,7 @@ interface SorceData {
 interface Chart {
   id: string;
   name: string;
-  hexaco_chart: number[];
+  hexaco_chart: Array<number | null>;
   main: MainChart;
   self_reported_over_time: SelfReportedData[];
   today: TodayData[];
@@ -31,8 +44,8 @@ interface MainChart {
   nulls: DataPoint[];
   range: RangePoint[];
   line: DataPoint[];
-  min: number;
-  max: number;
+  min: number | null;
+  max: number | null;
   markers: Marker[];
   rmps: RMP[];
 }
@@ -61,47 +74,47 @@ interface RMP {
 }
 
 interface SelfReportedData {
-  date: string;
-  sleep_mean: number | null;
-  activity_mean: number | null;
-  resilience_mean: number | null;
-  productivity_mean: number | null;
-  nutrition_mean: number | null;
+  date: JsonTimestamp;
+  sleep_mean?: number | null;
+  activity_mean?: number | null;
+  resilience_mean?: number | null;
+  productivity_mean?: number | null;
+  nutrition_mean?: number | null;
 }
 
 interface TodayData {
-  date: string;
-  engagement_rate: number;
-  weekly_engagement_rate: number;
-  monthly_engagement_rate: number;
-  alltime_engagement_rate: number;
-  hrv_this_week_average: number | null;
-  hrv_week_trend_percent: number | null;
-  hrv_previous_week_average: number;
-  hrv_this_month_average: number;
-  hrv_month_trend_percent: number;
-  hrv_previous_month_average: number;
-  hrv_this_quarter_average: number;
-  hrv_quarter_trend_percent: number;
-  hrv_previous_quarter_average: number;
-  sleep_mean: number | null;
-  sleep_trend: string;
-  activity_mean: number | null;
-  activity_trend: string;
-  resilience_mean: number | null;
-  resilience_trend: string;
-  productivity_mean: number | null;
-  productivity_trend: string;
-  nutrition_mean: number | null;
-  nutrition_trend: string;
-  rmp: string | null;
+  date: JsonTimestamp;
+  engagement_rate?: number | null;
+  weekly_engagement_rate?: number | null;
+  monthly_engagement_rate?: number | null;
+  alltime_engagement_rate?: number | null;
+  hrv_this_week_average?: number | null;
+  hrv_week_trend_percent?: number | null;
+  hrv_previous_week_average?: number | null;
+  hrv_this_month_average?: number | null;
+  hrv_month_trend_percent?: number | null;
+  hrv_previous_month_average?: number | null;
+  hrv_this_quarter_average?: number | null;
+  hrv_quarter_trend_percent?: number | null;
+  hrv_previous_quarter_average?: number | null;
+  sleep_mean?: number | null;
+  sleep_trend?: string | null;
+  activity_mean?: number | null;
+  activity_trend?: string | null;
+  resilience_mean?: number | null;
+  resilience_trend?: string | null;
+  productivity_mean?: number | null;
+  productivity_trend?: string | null;
+  nutrition_mean?: number | null;
+  nutrition_trend?: string | null;
+  rmp?: string | null;
 }
 
 interface TeamStats {
   company_name: string;
   team_name: string;
   total_recordings_count: number;
-  recent_recordings: Date[];
+  recent_recordings: JsonTimestamp[];
   recent_active_members: number;
   total_members: number;
 }
@@ -109,12 +122,13 @@ interface TeamStats {
 interface CompanyStats {
   company_name: string;
   stats: TeamStats[];
-  recent: Date;
+  recent: JsonTimestamp;
   recent_active_members: number;
 }
 
 export type {
   ChartState,
+  JsonTimestamp,
   CompanyStats,
   SorceData,
   Chart,

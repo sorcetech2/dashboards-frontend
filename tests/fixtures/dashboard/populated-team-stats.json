@@ -1,0 +1,28 @@
+[
+  {
+    "company_name": "Example Wellness Co",
+    "recent": "2026-09-03T08:30:00Z",
+    "recent_active_members": 9,
+    "stats": [
+      {
+        "company_name": "Example Wellness Co",
+        "team_name": "Engineering",
+        "total_recordings_count": 120,
+        "recent_recordings": [
+          "2026-09-01T09:00:00Z",
+          "2026-09-02T09:30:00+02:00"
+        ],
+        "recent_active_members": 5,
+        "total_members": 7
+      },
+      {
+        "company_name": "Example Wellness Co",
+        "team_name": "Design",
+        "total_recordings_count": 84,
+        "recent_recordings": ["2026-09-03T14:00:00Z"],
+        "recent_active_members": 4,
+        "total_members": 5
+      }
+    ]
+  }
+]

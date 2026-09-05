@@ -16,23 +16,44 @@ import ShimmerButton from '@/components/shimmer-button';
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (pending) return;
+    setPending(true);
+    setError(null);
     const formData = new FormData(e.currentTarget);
-    const currentUsername = formData.get('username') as string;
-    const currentPassword = formData.get('password') as string;
-
-    console.log('Submitting form with username:', currentUsername, 'and password:', currentPassword);
-    await signIn('credentials', {
-      username: currentUsername,
-      password: currentPassword,
-      callbackUrl: '/dashboard'
-    });
+    const usernameValue = formData.get('username');
+    const passwordValue = formData.get('password');
+    const submittedUsername =
+      typeof usernameValue === 'string' ? usernameValue : '';
+    const submittedPassword =
+      typeof passwordValue === 'string' ? passwordValue : '';
+    try {
+      const result = await signIn('credentials', {
+        username: submittedUsername,
+        password: submittedPassword,
+        redirect: false
+      });
+      if (!result?.ok || result.error) {
+        setError('Invalid username or password.');
+        setPending(false);
+        return;
+      }
+      window.location.assign('/dashboard');
+    } catch {
+      setError('Invalid username or password.');
+      setPending(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-start md:items-center p-8">
+    <main
+      id="main-content"
+      className="min-h-screen flex justify-center items-start md:items-center p-8"
+    >
       <NeonGradientCard className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
@@ -42,6 +63,7 @@ export default function LoginPage() {
               width={220}
               height={80}
               className="inline-block mr-2"
+              priority
             />
           </CardTitle>
           <CardDescription className="text-center">
@@ -49,13 +71,20 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardFooter>
-          <form onSubmit={handleSubmit} className="w-full space-y-4">
+          <form
+            onSubmit={(event) => {
+              void handleSubmit(event);
+            }}
+            className="w-full space-y-4"
+          >
             <div>
               <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
                 name="username"
                 type="text"
+                autoComplete="username"
+                maxLength={200}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -67,22 +96,32 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="current-password"
+                maxLength={200}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
-            <ShimmerButton type="submit" className="w-full shadow-2xl">
+            <p
+              role={error ? 'alert' : 'status'}
+              aria-live="polite"
+              className="min-h-5 text-sm text-red-400"
+            >
+              {error}
+            </p>
+            <ShimmerButton
+              type="submit"
+              className="w-full shadow-2xl disabled:opacity-60"
+              disabled={pending}
+            >
               <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight text-white dark:from-white dark:to-slate-900/10 lg:text-lg">
-                Log in
+                {pending ? 'Signing in…' : 'Log in'}
               </span>
             </ShimmerButton>
-            {/* <Button type="submit" className="w-full">
-              Log in
-            </Button> */}
           </form>
         </CardFooter>
       </NeonGradientCard>
-    </div>
+    </main>
   );
 }

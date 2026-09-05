@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Synthetic browser-test credentials and hashes"
+paths = [
+  '''^tests/fixtures/e2e-user-registry\.json$''',
+  '''^e2e/auth-dashboard\.spec\.ts$''',
+  '''^playwright\.config\.ts$'''
+]

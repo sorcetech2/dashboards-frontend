@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-09-04T00:00:00.000Z",
+  "tenants": [
+    {
+      "id": "tenant_example",
+      "displayName": "Example Wellness Co",
+      "dashboardObjectKey": "populated-dashboard.json",
+      "enabled": true,
+      "createdAt": "2026-09-04T00:00:00.000Z",
+      "updatedAt": "2026-09-04T00:00:00.000Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "user_viewer",
+      "username": "viewer",
+      "displayName": "Example Viewer",
+      "password": {
+        "algorithm": "scrypt",
+        "parametersVersion": 1,
+        "salt": "MDEyMzQ1Njc4OWFiY2RlZg==",
+        "hash": "zdDbRfIhtxmptouO7mIxUFRK3Y3oIQrJnEsQzmgLPC7Yvv9yHozPkHaqGhzkurZgXsLTRerqseUSe5hergViuA=="
+      },
+      "role": "viewer",
+      "tenantId": "tenant_example",
+      "enabled": true,
+      "authVersion": 1,
+      "createdAt": "2026-09-04T00:00:00.000Z",
+      "updatedAt": "2026-09-04T00:00:00.000Z"
+    },
+    {
+      "id": "user_admin",
+      "username": "admin",
+      "displayName": "Example Admin",
+      "password": {
+        "algorithm": "scrypt",
+        "parametersVersion": 1,
+        "salt": "ZmVkY2JhOTg3NjU0MzIxMA==",
+        "hash": "TUsIu0/SOdwC9CGER9mZLCqtUSFDsU6ZPbZKpjZutjA+fG+diwjOF3Ya+Pk4pA/0m1U2Eevyw6s8pZz5DF0Vwg=="
+      },
+      "role": "admin",
+      "tenantId": "tenant_example",
+      "enabled": true,
+      "authVersion": 1,
+      "createdAt": "2026-09-04T00:00:00.000Z",
+      "updatedAt": "2026-09-04T00:00:00.000Z"
+    }
+  ]
+}

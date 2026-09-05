@@ -1,16 +1,27 @@
 'use client';
-import React from 'react';
 import {
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
   Radar,
-  Tooltip
+  ResponsiveContainer,
+  Tooltip,
+  type TooltipProps
 } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
+interface HexacoDatum {
+  subject: string;
+  value: number;
+  title: string;
+  description: string;
+}
+
+const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+  const point = payload?.[0]?.payload as HexacoDatum | undefined;
+  const value = payload?.[0]?.value;
+
+  if (active && point && typeof value === 'number') {
     return (
       <div
         className="custom-tooltip"
@@ -22,12 +33,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         }}
       >
         <h3 className="text-sm font-bold text-gray-900">
-          {payload[0].payload.title}{' '}
-          <Badge variant="secondary">{Math.round(payload[0].value)}</Badge>
+          {point.title} <Badge variant="secondary">{Math.round(value)}</Badge>
         </h3>
-        <p className="text-sm text-gray-700">
-          {payload[0].payload.description}
-        </p>
+        <p className="text-sm text-gray-700">{point.description}</p>
       </div>
     );
   }
@@ -36,7 +44,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 interface HexacoChartProps {
-  hexacoData: number[];
+  hexacoData: Array<number | null | undefined>;
   dimensionNames: Record<string, string>;
   dimensionDescriptions: Record<string, string>;
 }
@@ -47,33 +55,51 @@ export default function HexacoChart({
   dimensionDescriptions
 }: HexacoChartProps) {
   const dimensions = ['H', 'E', 'X', 'A', 'C', 'O'];
-  const data = dimensions.map((dim, index) => ({
-    subject: dim,
-    value: hexacoData[index],
-    title: dimensionNames[dim],
-    description: dimensionDescriptions[dim]
-  }));
+  const data = dimensions.flatMap<HexacoDatum>((dim, index) => {
+    const value = hexacoData[index];
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return [];
+    }
+
+    return [
+      {
+        subject: dim,
+        value,
+        title: dimensionNames[dim] ?? dim,
+        description: dimensionDescriptions[dim] ?? 'No description available.'
+      }
+    ];
+  });
+
+  if (data.length === 0) {
+    return (
+      <p className="p-6 text-center text-sm text-muted-foreground">
+        No personality data available
+      </p>
+    );
+  }
 
   return (
-    <RadarChart
-      cx={300}
-      cy={250}
-      outerRadius={150}
-      width={600}
-      height={500}
-      data={data}
+    <div
+      className="h-[min(75vw,28rem)] min-h-[18rem] w-full"
+      role="img"
+      aria-label="HEXACO personality profile"
     >
-      <PolarGrid radialLines={true} polarRadius={[0]} />
-      <Tooltip content={CustomTooltip} />
-      <PolarAngleAxis dataKey="subject" />
-      <Radar
-        name="Values"
-        dataKey="value"
-        stroke="#8884d8"
-        fill="#8884d8"
-        fillOpacity={0.6}
-        dot={{ fill: '#8884d8', strokeWidth: 2, stroke: '#fff', r: 5 }}
-      />
-    </RadarChart>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
+          <PolarGrid radialLines={true} polarRadius={[0]} />
+          <Tooltip content={<CustomTooltip />} />
+          <PolarAngleAxis dataKey="subject" />
+          <Radar
+            name="Values"
+            dataKey="value"
+            stroke="#8884d8"
+            fill="#8884d8"
+            fillOpacity={0.6}
+            dot={{ fill: '#8884d8', strokeWidth: 2, stroke: '#fff', r: 5 }}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

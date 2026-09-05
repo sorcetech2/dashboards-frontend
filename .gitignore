@@ -7,6 +7,7 @@
 
 # testing
 /coverage
+/output/playwright
 
 # next.js
 /.next/
@@ -28,6 +29,10 @@ yarn-error.log*
 # env files
 .env*
 !.env.example
+
+# Local development/test auth registry. Production must use the private S3
+# object configured by AUTH_USER_REGISTRY_BUCKET/KEY/REGION.
+/lib/user-registry.json
 
 # vercel
 .vercel

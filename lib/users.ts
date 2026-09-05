@@ -1,263 +1,223 @@
-'use server';
+import 'server-only';
 
-// Define the DashboardUser type
-interface DashboardUser {
+import {
+  normalizeUsername,
+  type Tenant,
+  type UserRecord
+} from './users/schema';
+import { getUserStore } from './users/store';
+import { verifyDummyPassword, verifyPassword } from './users/passwords';
+
+// Sanitized principal. This is the ONLY user shape returned by this facade;
+// password hashes, salts, object keys, and storage metadata never cross it.
+export interface Principal {
   id: string;
   username: string;
-  code: string;
   displayName: string;
-  admin: boolean;
+  role: 'admin' | 'viewer';
+  tenantId: string;
+  enabled: boolean;
+  authVersion: number;
 }
 
-// Create an array of DashboardUser instances
-const hardcodedUsers: DashboardUser[] = [
-  {
-    id: '14',
-    username: 'petnutrition',
-    code: 'f6cb0b70f',
-    displayName: 'Pet Nutrition',
-    admin: false
-  },
-  {
-    id: '16',
-    username: 'royalcanin',
-    code: 'ffbe77c6',
-    displayName: 'Royal Canin',
-    admin: false
-  },
-  {
-    id: '19',
-    username: 'ferrotec',
-    code: 'dc63d35f',
-    displayName: 'Ferrotec',
-    admin: false
-  },
-  {
-    id: '2',
-    username: 'sorce',
-    code: '93418d',
-    displayName: 'SORCE',
-    admin: true
-  },
-  {
-    id: '25',
-    username: 'vipjune2023',
-    code: '9fsm9sua',
-    displayName: 'VIP June 2023',
-    admin: false
-  },
-  {
-    id: '26',
-    username: 'regenerative_summer_camp',
-    code: '84tls9aod',
-    displayName: 'Regenerative Summer Camp',
-    admin: false
-  },
-  {
-    id: '27',
-    username: 'erin_heidenreich',
-    code: '73hsd393',
-    displayName: 'Erin Heidenreich',
-    admin: false
-  },
-  {
-    id: '30',
-    username: 'elemental_shift_consulting',
-    code: '41doms77%',
-    displayName: 'Elemental Shift Consulting',
-    admin: false
-  },
-  {
-    id: '32',
-    username: 'bonusly',
-    code: '4wuklis43',
-    displayName: 'Bonusly',
-    admin: false
-  },
-  {
-    id: '33',
-    username: 'liberty_company',
-    code: 'k48ferfly3',
-    displayName: 'Liberty Company',
-    admin: false
-  },
-  {
-    id: '35',
-    username: 'regenerate_mentorship',
-    code: '7wiwakuh98',
-    displayName: 'Regenerate Mentorship',
-    admin: false
-  },
-  {
-    id: '36',
-    username: 'that_hrv_guy',
-    code: 'k8bera55',
-    displayName: 'That HRV guy',
-    admin: false
-  },
-  {
-    id: '38',
-    username: 'dotconnect',
-    code: 'a1p3n42',
-    displayName: 'DotConnect',
-    admin: false
-  },
-  {
-    id: '39',
-    username: 'ashland_studios',
-    code: 'c%4td8g!',
-    displayName: 'Ashland Studios',
-    admin: false
-  },
-  {
-    id: '40',
-    username: 'ima',
-    code: 'h8r7me%8',
-    displayName: 'IMA',
-    admin: false
-  },
-  {
-    id: '41',
-    username: 'source_x_jade',
-    code: 't4uyo%nar!',
-    displayName: 'SORCE Lab x Jade Wolf',
-    admin: false
-  },
-  {
-    id: '42',
-    username: 'the_practice',
-    code: 'm4as!kra%',
-    displayName: 'The Practice',
-    admin: false
-  },
-  {
-    id: '44',
-    username: 'authenica',
-    code: 'd4mini%eul55',
-    displayName: 'Authenica',
-    admin: false
-  },
-  {
-    id: '47',
-    username: 'wwcma',
-    code: 'e1ne-meg8-yet%',
-    displayName: 'WWCMA',
-    admin: false
-  },
-  {
-    id: '48',
-    username: 'authenica2',
-    code: 'b9oYi!BuR72',
-    displayName: 'Authenica Cohort 2',
-    admin: false
-  },
-  //     {
-  //   id: '49',
-  //   username: 'the_practice_30days',
-  //   code: 'glowing2-waves!',
-  //   displayName: 'The 30-Day Practice Experience',
-  //   admin: false
-  // },
-  {
-    id: '50',
-    username: 'MOSS',
-    code: 'zen-harbor4%',
-    displayName: 'MOSS',
-    admin: false
-  },
-  {
-    id: '51',
-    username: 'the_practice_fall',
-    code: 'calm-breeze3!',
-    displayName: 'The Practice: Fall Cohort',
-    admin: false
-  },
-  {
-    id: '52',
-    username: 'authenica3',
-    code: 'feeling%-good8',
-    displayName: 'Authenica Cohort 3',
-    admin: false
-  },
-  {
-    id: '53',
-    username: 'unilever',
-    code: 'sun-relax%',
-    displayName: 'Unilever',
-    admin: false
-  },
-  {
-    id: '54',
-    username: 'ucb',
-    code: 'breathe-2calm!',
-    displayName: 'UCB',
-    admin: false
-  },
-  {
-    id: '55',
-    username: 'the_practice_winter2025',
-    code: 'relax-cozy55',
-    displayName: 'The Practice: Winter Cohort',
-    admin: false
-  },
-  {
-    id: '56',
-    username: 'the_practice_spring2026',
-    code: 'zen-brea$thing78',
-    displayName: 'The Practice: Spring Cohort (2026)',
-    admin: false
-  },
-  {
-    id: '57',
-    username: 'the_practice_summer2026',
-    code: 'calm-100%-sunny',
-    displayName: 'The Practice: Summer Cohort (2026)',
-    admin: false
-  },
-  {
-    id: '58',
-    username: 'the_practice_fall2026',
-    code: 'golden-leafes#12',
-    displayName: 'The Practice: Fall Cohort (2026)',
-    admin: false
-  },
-  {
-    id: '59',
-    username: 'irg',
-    code: 'health-relax92!',
-    displayName: 'IRG',
-    admin: false
-  }
-];
-// just so
+export interface PrincipalAuthState {
+  id: string;
+  role: 'admin' | 'viewer';
+  tenantId: string;
+  enabled: boolean;
+  authVersion: number;
+}
 
+export interface ResolvedPrincipal {
+  principal: Principal;
+  tenant: Tenant;
+}
+
+function toPrincipal(user: UserRecord): Principal {
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    role: user.role,
+    tenantId: user.tenantId,
+    enabled: user.enabled,
+    authVersion: user.authVersion
+  };
+}
+
+function toAuthState(user: UserRecord): PrincipalAuthState {
+  return {
+    id: user.id,
+    role: user.role,
+    tenantId: user.tenantId,
+    enabled: user.enabled,
+    authVersion: user.authVersion
+  };
+}
+
+/**
+ * Authenticate against the current authoritative snapshot. All failure
+ * classes intentionally collapse to null for the caller, while unavailable
+ * or invalid registry data fails closed.
+ */
 export async function validateUser(
   username: unknown,
   password: unknown
-): Promise<DashboardUser | undefined> {
-  return hardcodedUsers.find((value) => {
-    return value.username === username && value.code === password;
-  });
+): Promise<Principal | null> {
+  if (
+    typeof username !== 'string' ||
+    typeof password !== 'string' ||
+    username.length > 200 ||
+    password.length > 200
+  ) {
+    return null;
+  }
+
+  const normalized = normalizeUsername(username);
+  let user: UserRecord | undefined;
+  try {
+    const snapshot = await getUserStore().load();
+    user = snapshot.registry.users.find(
+      (candidate) => candidate.username === normalized
+    );
+  } catch {
+    // Keep unknown-user timing behaviour even when the registry is unavailable
+    // and do not disclose configuration, parse, or IAM failures to the login.
+    verifyDummyPassword(password);
+    return null;
+  }
+
+  if (!user) {
+    verifyDummyPassword(password);
+    return null;
+  }
+
+  const passwordMatches = verifyPassword(password, user.password);
+  if (!user.enabled || !passwordMatches) return null;
+  return toPrincipal(user);
+}
+
+export async function findUserByName(
+  name: string | undefined | null
+): Promise<Principal | null> {
+  if (typeof name !== 'string' || name.length === 0) return null;
+  try {
+    const user = await getUserStore().findUserByName(name);
+    return user ? toPrincipal(user) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function findUserById(
+  id: string | undefined | null
+): Promise<Principal | null> {
+  if (typeof id !== 'string' || id.length === 0) return null;
+  try {
+    const user = await getUserStore().findUserById(id);
+    return user ? toPrincipal(user) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Authoritative state used by protected operations for authVersion checks.
+ * Registry read failures propagate so callers can tell an outage apart from a
+ * user that no longer exists; only the latter is a revocation.
+ */
+export async function getUserAuthStateById(
+  id: string | undefined | null
+): Promise<PrincipalAuthState | null> {
+  if (typeof id !== 'string' || id.length === 0) return null;
+  const user = await getUserStore().findUserById(id);
+  return user ? toAuthState(user) : null;
+}
+
+/**
+ * Resolve a session principal and its tenant from one authoritative snapshot.
+ * The supplied claims are compared to current id/enabled/authVersion/role/
+ * tenant state, so callers can both authorize and obtain the private object
+ * key without two registry reads. A canonical Principal is returned rather
+ * than echoing stale session display fields.
+ */
+export async function resolvePrincipal(
+  supplied: Principal | null | undefined
+): Promise<ResolvedPrincipal | null> {
+  if (
+    !supplied ||
+    typeof supplied.id !== 'string' ||
+    typeof supplied.username !== 'string' ||
+    typeof supplied.tenantId !== 'string' ||
+    typeof supplied.authVersion !== 'number' ||
+    (supplied.role !== 'admin' && supplied.role !== 'viewer')
+  ) {
+    return null;
+  }
+
+  try {
+    const snapshot = await getUserStore().load();
+    const user = snapshot.registry.users.find(
+      (candidate) => candidate.id === supplied.id
+    );
+    if (
+      !user ||
+      !user.enabled ||
+      user.username !== supplied.username ||
+      user.enabled !== supplied.enabled ||
+      user.authVersion !== supplied.authVersion ||
+      user.role !== supplied.role ||
+      user.tenantId !== supplied.tenantId
+    ) {
+      return null;
+    }
+
+    const tenant = snapshot.registry.tenants.find(
+      (candidate) => candidate.id === user.tenantId
+    );
+    if (!tenant || !tenant.enabled) return null;
+    return { principal: toPrincipal(user), tenant };
+  } catch {
+    return null;
+  }
+}
+
+// Name retained for the dashboard data service's explicit authorized-tenant
+// boundary. It is an alias, not a second implementation or registry read.
+export const resolvePrincipalTenant = resolvePrincipal;
+
+export async function listUsers(): Promise<Principal[]> {
+  const users = await getUserStore().listUsers();
+  return users.map(toPrincipal);
 }
 
 export async function isAdmin(
   name: string | undefined | null
 ): Promise<boolean> {
   const user = await findUserByName(name);
-  if (!user) return false;
-  return user.admin;
+  return user?.role === 'admin';
 }
 
-// Find user by name
-export async function findUserByName(
-  name: string | undefined | null
-): Promise<DashboardUser | null> {
-  if (!name) return null;
-  let user = await hardcodedUsers.find((value) => {
-    return value.username == name;
-  });
-  if (!user) {
+/**
+ * Resolve the server-side tenant descriptor for a principal. This function is
+ * intentionally separate from Principal because object keys must never be
+ * sent to the browser or embedded in an Auth.js token.
+ */
+export async function findTenantForPrincipal(
+  principal: Pick<Principal, 'tenantId'>
+): Promise<Tenant | null> {
+  try {
+    const snapshot = await getUserStore().load();
+    return (
+      snapshot.registry.tenants.find(
+        (tenant) => tenant.id === principal.tenantId
+      ) ?? null
+    );
+  } catch {
     return null;
   }
-  return user;
 }
+
+// Server-only callers can provide a store in pure tests without exporting
+// stored user data from this facade.
+export type { UserStore, UserRegistrySnapshot } from './users/store';

@@ -1,0 +1,12 @@
+{
+  "id": 106,
+  "name": "Malformed Co",
+  "charts": [
+    {
+      "id": "bad",
+      "name": "Bad",
+      "main": { "line": [{ "x": 1788432000000, "y": 4 }] },
+      "today": [{ "date": "not-a-timestamp" }]
+    }
+  ]
+}

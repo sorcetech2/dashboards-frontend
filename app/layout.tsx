@@ -1,11 +1,10 @@
 import './globals.css';
 
 import { Analytics } from '@vercel/analytics/react';
-import { SessionProvider } from "next-auth/react"
 
 export const metadata = {
   title: 'SORCE Dashboards',
-  description: 'Updated version of the sorce dashboards'
+  description: 'Team health and wellbeing dashboards from SORCE'
 };
 
 export default function RootLayout({
@@ -15,17 +14,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-      </head>
       <body
         style={{ backgroundColor: 'rgba(4,16,33,1)' }}
         className="dark flex min-h-screen w-full flex-col"
       >
-        <SessionProvider>
-          {children}
-        </SessionProvider>
+        <a
+          href="#main-content"
+          className="sr-only z-50 rounded-md bg-background px-4 py-2 text-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+        >
+          Skip to main content
+        </a>
+        {children}
+        <Analytics />
       </body>
-      <Analytics />
     </html>
   );
 }

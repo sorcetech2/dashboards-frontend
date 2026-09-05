@@ -1,71 +1,152 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
-import { validateUser } from './users'; // Import the validateUser function
+import {
+  AUTH_SESSION_SCHEMA_VERSION,
+  hasCurrentSessionClaims,
+  matchesAuthoritativeAuthState,
+  rejectSession,
+  rejectSessionToken
+} from './auth-session';
+import { authLogger } from './auth-logger';
+import { getLoginThrottle, requestClientIp } from './login-throttle';
+import { getUserAuthStateById, validateUser, type Principal } from './users';
 
+// The single Auth.js configuration for this app. The HTTP route
+// (app/api/auth/[...nextauth]/route.ts) and server-side auth() calls
+// must both come from here so callbacks and session fields cannot drift.
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  trustHost: true,
+  logger: authLogger,
+  session: { strategy: 'jwt', maxAge: 12 * 60 * 60 }, // one workday
+  pages: { signIn: '/login' },
   providers: [
     Credentials({
-      // The name to display on the sign in form (e.g. "Sign in with...")
       name: 'Credentials',
-      // `credentials` is used to generate a form on the sign in page.
-      // You can specify which fields should be submitted, by adding keys to the `credentials` object.
-      // e.g. domain, username, password, 2FA token, etc.
-      // You can pass any HTML attribute to the <input> tag through the object.
       credentials: {
         username: { label: 'Username', type: 'text' },
         password: { label: 'Password', type: 'password' }
       },
-      async authorize(credentials) {
-        if (!credentials || !credentials.username || !credentials.password) {
+      async authorize(credentials, request) {
+        const username = credentials?.username;
+        const password = credentials?.password;
+        try {
+          const ip = requestClientIp(request);
+          const throttle = getLoginThrottle();
+          if (!(await throttle.beforeAttempt(username, ip))) return null;
+
+          if (!username || !password) {
+            await throttle.recordFailure(username, ip);
+            return null;
+          }
+
+          // Returns a sanitized principal or null; never contains password
+          // data. Unknown users still take the facade's dummy-hash path.
+          const principal = await validateUser(username, password);
+          if (!principal) {
+            await throttle.recordFailure(username, ip);
+            return null;
+          }
+
+          // A successful login clears an existing failure state. If the
+          // durable throttle cannot be updated, fail closed and do not issue
+          // a session despite valid credentials.
+          await throttle.recordSuccess(username, ip);
+
+          // Auth.js uses `name` for its standard session identity. Keep the
+          // application-specific username alongside it for explicit lookups.
+          return {
+            ...principal,
+            name: principal.username,
+            admin: principal.role === 'admin',
+            sessionSchemaVersion: AUTH_SESSION_SCHEMA_VERSION,
+            email: null,
+            image: null
+          };
+        } catch {
+          // Do not distinguish throttle outages, invalid credentials, or
+          // malformed requests to the caller.
           return null;
-        }
-        console.log("0E", credentials);
-        const user = await validateUser(
-          credentials.username as string,
-          credentials.password as string
-        );
-
-        console.log("A", user);
-
-        if (user) {
-          // Any object returned will be saved in `user` property of the JWT
-          return user;
-        } else {
-          // If you return null then an error will be displayed advising the user to check their details.
-          return null;
-
-          // You can also Reject this callback with an Error thus the user will be sent to the error page with the error message as a query parameter
         }
       }
     })
   ],
   callbacks: {
     async jwt({ token, user }) {
-      console.log("B", token, user);
-      // Add user data to the token
       if (user) {
-        token.id = user.id;
-        token.username = (user as any).username; // Cast to any if necessary to access custom properties
-        token.displayName = (user as any).displayName;
-        token.admin = (user as any).admin;
+        // authorize() returns our sanitized Principal.
+        const principal = user as unknown as Principal;
+        token.id = principal.id;
+        token.name = principal.username;
+        token.username = principal.username;
+        token.displayName = principal.displayName;
+        token.tenantId = principal.tenantId;
+        token.role = principal.role;
+        token.admin = principal.role === 'admin';
+        token.enabled = principal.enabled;
+        token.authVersion = principal.authVersion;
+        token.sessionSchemaVersion = AUTH_SESSION_SCHEMA_VERSION;
+      } else {
+        // Re-read authoritative state whenever Auth.js refreshes a JWT. This
+        // invalidates sessions after disable/reset/role/tenant changes without
+        // relying on an in-memory cache or waiting for expiry.
+        if (!hasCurrentSessionClaims(token)) {
+          return rejectSessionToken(token);
+        }
+        let current;
+        try {
+          current = await getUserAuthStateById(token.id);
+        } catch {
+          // The registry is unreachable, not the user revoked. Keep the token
+          // so a transient outage does not delete the cookie; data handlers
+          // still resolve the principal against the registry before serving.
+          return token;
+        }
+        if (!matchesAuthoritativeAuthState(token, current)) {
+          return rejectSessionToken(token);
+        }
       }
       return token;
     },
     session({ session, token }) {
-      console.log("C", token, session);
-      // Add user data to the session from the token
-      if (session.user && token.id) {
-        (session.user as any).id = token.id;
+      if (token.sessionSchemaVersion !== AUTH_SESSION_SCHEMA_VERSION) {
+        return rejectSession(token);
       }
-      if (session.user && token.username) {
-        (session.user as any).username = token.username;
-      }
-      if (session.user && token.displayName) {
-        (session.user as any).displayName = token.displayName;
-      }
-      if (session.user && typeof token.admin === 'boolean') {
-        (session.user as any).admin = token.admin;
+      if (session.user) {
+        session.user.id =
+          typeof token.id === 'string' ? token.id : session.user.id;
+        session.user.name =
+          typeof token.name === 'string' ? token.name : session.user.name;
+        session.user.username =
+          typeof token.username === 'string'
+            ? token.username
+            : session.user.username;
+        session.user.displayName =
+          typeof token.displayName === 'string'
+            ? token.displayName
+            : session.user.displayName;
+        session.user.tenantId =
+          typeof token.tenantId === 'string'
+            ? token.tenantId
+            : session.user.tenantId;
+        session.user.role =
+          token.role === 'admin' || token.role === 'viewer'
+            ? token.role
+            : session.user.role;
+        session.user.admin =
+          typeof token.admin === 'boolean' ? token.admin : session.user.admin;
+        session.user.enabled =
+          typeof token.enabled === 'boolean'
+            ? token.enabled
+            : session.user.enabled;
+        session.user.authVersion =
+          typeof token.authVersion === 'number'
+            ? token.authVersion
+            : session.user.authVersion;
+        session.user.sessionSchemaVersion =
+          typeof token.sessionSchemaVersion === 'number'
+            ? token.sessionSchemaVersion
+            : session.user.sessionSchemaVersion;
       }
       return session;
     }
